@@ -1,0 +1,116 @@
+#pragma warning(disable:4996)
+
+#include<stdio.h>
+#include<stdbool.h>
+
+#define MAX 100
+
+int idx_check;
+
+int input();
+int floor(int begin, int end, int val, int *arr);
+int ceiling(int size,int begin, int end, int val, int *arr);
+bool check_ascending_order(int size_arr, int *arr);
+
+int main()
+{
+	input();
+
+	return 0;
+}
+int input()
+{
+	int data[MAX];
+	int N, K;
+
+	printf("The size of array: ");
+	scanf("%d", &N);
+	if (N < 0)
+		return 0;
+	printf("array[%d]: ", N);
+	for (int i = 0;i < N;i++)
+		scanf("%d", &data[i]);
+	idx_check = 0;
+	if (!check_ascending_order(N, data)) {
+		printf("You must set data as ascending order.\n");
+		return input();
+	}
+	printf("Value: ");
+	scanf("%d", &K);
+
+	
+	printf("floor: %d\n", floor(0,N-1, K, data));
+	printf("ceiling: %d\n", ceiling(N,0,N-1, K, data));
+
+	return input();
+}
+int floor(int begin, int end, int val, int *arr)
+{
+	if (arr[0]>val)
+		return -1;
+	else if (begin == end||end-begin==1) {
+		if (arr[begin] > val)
+			return arr[begin - 1];
+		else if (arr[begin] <= val&&val < arr[end])
+			return arr[begin];
+		else
+			return arr[end];
+	}
+	else {
+		int middle = (begin + end) / 2;
+		if (arr[middle] == val)
+			return arr[middle];
+		else if (arr[middle] > val)
+			return floor(begin, middle - 1, val, arr);
+		else
+			return floor(middle + 1, end, val, arr);
+	}
+}
+int ceiling(int size,int begin, int end, int val, int *arr)
+{
+	if (arr[size-1]<val)
+		return -1;
+	else if (begin == end||end-begin==1) {
+		if (arr[begin] >= val)
+			return arr[begin];
+		else if (arr[begin] < val&&arr[end] >= val)
+			return arr[end];
+		else
+			return arr[end + 1];
+	}
+	else {
+		int middle = (begin + end) / 2;
+		if (arr[middle] == val)
+			return arr[middle];
+		else if (arr[middle] > val)
+			return ceiling(size,begin, middle - 1, val, arr);
+		else
+			return ceiling(size,middle + 1, end, val, arr);
+	}
+}
+bool check_ascending_order(int size_arr, int *arr)
+{
+	if (size_arr == idx_check+1)
+		return true;
+
+	if (*arr <= *(arr+1)) {
+		idx_check++;
+		check_ascending_order(size_arr, arr + 1);
+	}
+	else
+		return false;
+}
+int binary_search(int begin, int end, int val, int *arr)
+{
+	if (begin > end)
+		return -1;
+	else {
+		int middle = (begin + end) / 2;
+		if (arr[middle] == val)
+			return arr[middle];
+		else if (arr[middle] > val)
+			return binary_search(begin, middle - 1, val, arr);
+		else
+			return binary_search(middle + 1, end, val, arr);
+	}
+}

@@ -1,0 +1,259 @@
+#pragma warning(disable:4996)
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#include<stdbool.h>
+#include<math.h>
+#include"queue.h"
+
+typedef struct info {
+	char *name;
+	double longitude;
+	double latitude;
+	double weight;
+	int visit;
+	struct info *next;
+}Info;
+typedef Info* Item;
+
+#define LINE_LENGTH 200
+#define PI acos(-1.0)
+#define INFO_SIZE 15000
+
+Info *info_alab[INFO_SIZE];
+
+int num_info = 0;//number of info
+
+double  calDistance(double  lat1, double  lon1, double  lat2, double  lon2);
+double  deg2rad(double  deg);
+double  rad2deg(double  rad);
+void read_info();
+int read_line(FILE *fp, char str[], int n);
+void add(char *line);
+void read_roadList();
+int find_area(char *str);
+void add_road(char *line);
+void Dijkstra(int start_idx, int end_idx);
+void print_path(int *prev, int start_idx,Info *p);
+double get_weight(int u, int v);
+int find_minimum(double *d);
+void get_route();
+
+int main()
+{
+	read_info();
+	read_roadList();
+	get_route();
+
+	return 0;
+}
+void read_info()
+{
+	char buffer[LINE_LENGTH];
+	FILE *fp = fopen("alabama.txt", "r");
+	if (fp == NULL) {
+		printf("No file.\n");
+		return;
+	}
+	while (!feof(fp)) {
+		if (read_line(fp, buffer, LINE_LENGTH)>0)
+			add(buffer);
+	}
+	fclose(fp);
+}
+int read_line(FILE *fp, char str[], int n)
+{
+	int ch, i = 0;
+
+	while ((ch = fgetc(fp)) != '\n'&&ch != EOF)
+		if (i < n)
+			str[i++] = ch;
+	str[i] = '\0';
+	return i;
+}
+void add(char *line)
+{
+	char *buffer;
+	buffer = strtok(line, "\t");
+	info_alab[num_info] = (Info *)malloc(sizeof(Info));
+	info_alab[num_info]->name = strdup(buffer);
+	buffer = strtok(NULL, "\t");
+	info_alab[num_info]->longitude = atof(buffer);
+	buffer = strtok(NULL, "\t");
+	info_alab[num_info]->latitude = atof(buffer);
+	info_alab[num_info]->weight = 0;
+	info_alab[num_info]->visit = 0;
+	info_alab[num_info]->next = NULL;
+
+	num_info++;
+}
+void read_roadList()
+{
+	char buffer[LINE_LENGTH];
+	FILE *fp = fopen("roadList2.txt", "r");
+	if (fp == NULL) {
+		printf("No file.\n");
+		return;
+	}
+	while (!feof(fp)) {
+		if (read_line(fp, buffer, LINE_LENGTH)>0)
+			add_road(buffer);
+	}
+	fclose(fp);
+}
+void add_road(char *line)
+{
+	char *buffer;
+	char *buffer2;
+	buffer = strtok(line, "\t");
+	int idx = find_area(buffer);
+	if (idx < 0) {
+		printf("Error!.\n");
+		return;
+	}
+	buffer2 = strtok(NULL, "\t");
+	int idx2 = find_area(buffer2);
+	if (idx2 < 0) {
+		printf("Error!.\n");
+		return;
+	}
+	Info *tmp = (Info *)malloc(sizeof(Info));
+	tmp->name = strdup(buffer2);
+	tmp->weight = calDistance(info_alab[idx]->latitude, info_alab[idx]->longitude, info_alab[idx2]->latitude, info_alab[idx2]->longitude);
+	tmp->latitude = info_alab[idx2]->latitude;
+	tmp->longitude = info_alab[idx2]->longitude;
+	if (info_alab[idx]->next == NULL) {
+		info_alab[idx]->next = tmp;
+		tmp->next = NULL;
+	}
+	else {
+		tmp->next = info_alab[idx]->next;
+		info_alab[idx]->next = tmp;
+	}
+	Info *tmp2 = (Info *)malloc(sizeof(Info));
+	tmp2->name = strdup(buffer);
+	tmp2->weight = tmp->weight;
+	tmp2->latitude = info_alab[idx]->latitude;
+	tmp2->longitude = info_alab[idx]->longitude;
+	if (info_alab[idx2]->next == NULL) {
+		info_alab[idx2]->next = tmp2;
+		tmp2->next = NULL;
+	}
+	else {
+		tmp2->next = info_alab[idx2]->next;
+		info_alab[idx2]->next = tmp2;
+	}
+}
+int find_area(char *str)
+{
+	for (int i = 0;i < INFO_SIZE;i++)
+		if (info_alab[i] != NULL&&strcmp(str, info_alab[i]->name) == 0)
+			return i;
+	return -1;
+}
+double  calDistance(double  lat1, double  lon1, double  lat2, double  lon2) {
+	double  theta, dist;
+	theta = lon1 - lon2;
+	dist = sin(deg2rad(lat1)) * sin(deg2rad(lat2)) + cos(deg2rad(lat1))
+		* cos(deg2rad(lat2)) * cos(deg2rad(theta));
+
+	dist = acos(dist);
+	dist = rad2deg(dist);
+	dist = dist * 60 * 1.1515;
+	dist = dist  *  1.609344;        //  단위  mile  에서  km  변환.       
+	dist = dist  *  1000.0;            //  단위    km  에서  m  로변환        
+	return  dist;
+}
+//  주어진도(degree)  값을라디언으로변환    
+double  deg2rad(double  deg) {
+	return  (double)(deg  * PI / (double)180);
+}
+//  주어진라디언(radian)  값을도(degree)  값으로변환    
+double  rad2deg(double  rad) {
+	return  (double)(rad  *  (double)180 / PI);
+}
+void Dijkstra(int start_idx, int end_idx)
+{
+	double *d = (double *)malloc(sizeof(double)*num_info);
+	int *prev = (int *)malloc(sizeof(int)*num_info);
+
+	for (int i = 0;i < num_info;i++) {
+		d[i] = INFINITY;
+		prev[i] = -1;
+	}
+	int num_S = 0;
+	d[start_idx] = 0;
+	while (num_S<num_info) {
+		int u=find_minimum(d);
+		info_alab[u]->visit = 1;
+		num_S++;
+		Info *cur = info_alab[u];
+		while ((cur=cur->next) != NULL) {
+			int v = find_area(cur->name);
+			if (info_alab[v]->visit == 1)
+				continue;
+			else if (d[v] > d[u] + get_weight(u, v)) {
+				d[v] = d[u] + get_weight(u, v);
+				prev[v] = u;
+			}
+		}
+	}
+	Info *p = info_alab[end_idx];
+	print_path(prev, start_idx,p);
+	printf("Length of Route: %lf\n", d[end_idx]);
+}
+void print_path(int *prev, int start_idx,Info *p)
+{
+	if (p == NULL)
+		return;
+	int tmp = find_area(p->name);
+	if (tmp < 0) {
+		printf("Error!\n");
+		return;
+	}
+	if (tmp == start_idx) {
+		return;
+	}
+	p = info_alab[prev[tmp]];
+	print_path(prev, start_idx,p);
+	printf("%s\n", p->name);
+}
+double get_weight(int u, int v)
+{
+	Info *cur = info_alab[u];
+	while ((cur = cur->next) != NULL) {
+		if (strcmp(cur->name, info_alab[v]->name) == 0)
+			break;
+	}
+	return cur->weight;
+}
+int find_minimum(double *d)
+{
+	int min = 0;
+	while (info_alab[min]->visit == 1)
+		min++;
+	for (int i = min + 1;i < num_info;i++) {
+		if (info_alab[i]->visit == 1)
+			continue;
+		else if (d[min] > d[i])
+			min = i;
+	}
+	return min;
+}
+void get_route()
+{
+	char depart[LINE_LENGTH];
+	char destin[LINE_LENGTH];
+	printf("Departure: ");
+	read_line(stdin, depart, LINE_LENGTH);
+	int start = find_area(depart);
+	if (start < 0)
+		printf("There is no area named '%s'.\n", depart);
+	printf("Destination: ");
+	read_line(stdin, destin, LINE_LENGTH);
+	int end = find_area(destin);
+	if (end < 0)
+		printf("There is no area named '%s'.\n", destin);
+	Dijkstra(start, end);
+}

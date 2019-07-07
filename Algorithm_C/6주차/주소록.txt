@@ -1,0 +1,398 @@
+#pragma warning(disable: 4996)
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+
+#define BUFFER_SIZE 100
+#define LINE_LENGTH 200
+
+typedef struct {
+	char name[BUFFER_SIZE];
+	char company[BUFFER_SIZE];
+	char address[BUFFER_SIZE];
+	char zipcode[BUFFER_SIZE];
+	char phone[BUFFER_SIZE];
+	char email[BUFFER_SIZE];
+}Person;
+typedef struct node {
+	Person info;
+	struct node *parent;
+	struct node *left;
+	struct node *right;
+}Node;
+
+Node *ROOT = NULL;
+
+
+void read();
+void list();
+void find();
+void trace();
+void remove();
+void save();
+int read_line(FILE *fp, char str[], int n);
+void add(char str[]);
+Node* Node_allocation();
+char* delet_space(char str[]);
+void tree_insert(Node *cur);
+void inorder_traversal(Node *root);
+void print_info(Person p);
+Node *tree_search(Node *x, char *str);
+void traversal_trace(Node *p, char *str);
+Node *tree_delete(Node *cur);
+Node *tree_successor(Node *x);
+Node *tree_minimum(Node *x);
+void write_file(FILE *fp, Node *p);
+Node *floor(char *str);
+Node *ceiling(char *str);
+
+int main()
+{
+	char command[BUFFER_SIZE];
+
+	while (1) {
+		printf("$ ");
+		scanf("%s", command);
+		if (strcmp(command, "read") == 0) {
+			read();
+		}
+		else if (strcmp(command, "list") == 0) {
+			list();
+		}
+		else if (strcmp(command, "find") == 0) {
+			find();
+		}
+		else if (strcmp(command, "trace") == 0) {
+			trace();
+		}
+		else if (strcmp(command, "delete") == 0) {
+			remove();
+		}
+		else if (strcmp(command, "save") == 0) {
+			save();
+		}
+		else if (strcmp(command, "exit") == 0) {
+			break;
+		}
+		else {
+			printf("Invalid Arguments.\n");
+			continue;
+		}
+	}
+	return 0;
+}
+void read()
+{
+	char fileN[BUFFER_SIZE];
+	scanf("%s", fileN);
+	char buffer[LINE_LENGTH];
+
+	FILE *fp = fopen(fileN, "r");
+	if (fp == NULL) {
+		printf("Open failed.\n");
+		return;
+	}
+	while (!feof(fp)) {
+		if(read_line(fp, buffer, LINE_LENGTH)>0)
+			add(buffer);
+	}
+
+	fclose(fp);
+}
+int read_line(FILE *fp, char str[], int n)
+{
+	int ch, i = 0;
+
+	while ((ch = fgetc(fp)) != '\n'&&ch != EOF)
+		if (i < n)
+			str[i++] = ch;
+	str[i] = '\0';
+	return i;
+}
+void add(char str[])
+{
+	char *delim = "\t|";
+	char *buf1;
+	Node *cur = Node_allocation();
+
+	buf1 = strtok(str, delim);
+	buf1 = delet_space(buf1);
+	strcpy(cur->info.name, buf1);
+
+	buf1 = strtok(NULL, delim);
+	buf1 = delet_space(buf1);
+	strcpy(cur->info.company, buf1);
+
+	buf1 = strtok(NULL, delim);
+	buf1 = delet_space(buf1);
+	strcpy(cur->info.address, buf1);
+
+	buf1 = strtok(NULL, delim);
+	buf1 = delet_space(buf1);
+	strcpy(cur->info.zipcode, buf1);
+
+	buf1 = strtok(NULL, delim);
+	buf1 = delet_space(buf1);
+	strcpy(cur->info.phone, buf1);
+
+	buf1 = strtok(NULL, delim);
+	buf1 = delet_space(buf1);
+	strcpy(cur->info.email, buf1);
+
+	tree_insert(cur);
+}
+Node* Node_allocation()
+{
+	Node *p = (Node *)malloc(sizeof(Node));
+	p->left = NULL;
+	p->right = NULL;
+	p->parent = NULL;
+	
+	return p;
+}
+char* delet_space(char str[])
+{
+	int j = 0;
+	while (str[j] == ' ')
+		str++;
+	int i = strlen(str);
+	while (str[i - 1] == ' ')
+		i--;
+	str[i] = '\0';
+
+	return str;
+}
+void tree_insert(Node *cur)
+{
+	Node *y = NULL;
+	Node *x = ROOT;
+	while (x != NULL) {
+		y = x;
+		if(strcmp(cur->info.name,x->info.name)<0)
+			x = x->left;
+		else
+			x = x->right;
+	}
+	cur->parent = y;
+	if (y == NULL)
+		ROOT = cur;
+	else if(strcmp(cur->info.name,y->info.name)<0)
+		y->left = cur;
+	else
+		y->right = cur;
+}
+void list()
+{
+	inorder_traversal(ROOT);
+}
+void inorder_traversal(Node *root)
+{
+	if (root != NULL) {
+		inorder_traversal(root->left);
+		print_info(root->info);
+		inorder_traversal(root->right);
+	}
+}
+void print_info(Person p)
+{
+	printf("%s\n", p.name);
+	printf("\tCompany: %s\n", p.company);
+	printf("\tAddress: %s\n", p.address);
+	printf("\tZipcode: %s\n", p.zipcode);
+	printf("\tPhones : %s\n", p.phone);
+	printf("\tEmail  : %s\n", p.email);
+}
+void find()
+{
+	char name[BUFFER_SIZE];
+	int ans;
+
+	scanf("%s", name);
+	Node *tmp = ROOT;
+	tmp=tree_search(tmp, name);
+	if (tmp == NULL) {
+		printf("There is not anybody named %s.\n", name);
+		printf("1.Floor 2.Ceiling 3.Keep going.");
+		scanf("%d", &ans);
+		if (ans == 1) {
+			tmp = floor(name);
+			if (tmp == NULL) {
+				printf("The tree does not have floor of %s.\n", name);
+				return;
+			}
+		}
+		else if (ans == 2) {
+			tmp = ceiling(name);
+			if (tmp == NULL) {
+				printf("The tree does not have ceiling of %s.\n", name);
+				return;
+			}
+		}
+		else if (ans == 3) {
+			printf("Type next order.\n");
+			return;
+		}
+		else {
+			printf("Invalid Argument.\n");
+			return;
+		}
+	}
+	print_info(tmp->info);
+}
+Node *floor(char *str)
+{
+	Node *y = NULL;
+	Node *x = ROOT;
+	while (x != NULL) {
+		y = x;
+		if (strcmp(str, x->info.name)<0)
+			x = x->left;
+		else
+			x = x->right;
+	}
+	if (strcmp(y->info.name, str) < 0)
+		return y;
+	else {
+		while (y->parent != NULL && y->parent->right!=y)
+			y = y->parent;
+		return y->parent;
+	}
+}
+Node *ceiling(char *str)
+{
+	Node *y = NULL;
+	Node *x = ROOT;
+	while (x != NULL) {
+		y = x;
+		if (strcmp(str, x->info.name)<0)
+			x = x->left;
+		else
+			x = x->right;
+	} 
+	if (strcmp(y->info.name, str) > 0)
+		return y;
+	else {
+		while (y->parent != NULL && y->parent->left!=y)
+			y = y->parent;
+		return y->parent;
+	}
+}
+Node *tree_search(Node *x, char *str)
+{
+	if (x == NULL)
+		return x;
+	int result = strcmp(x->info.name, str);
+	if (result==0)
+		return x;
+	if (result>0)
+		return tree_search(x->left, str);
+	else
+		return tree_search(x->right, str);
+}
+void trace()
+{
+	char name[BUFFER_SIZE];
+	scanf("%s", name);
+	Node *tmp = ROOT;
+	traversal_trace(tmp, name);
+}
+void traversal_trace(Node *p, char *str)
+{
+	if (p != NULL) {
+		int result = strcmp(p->info.name, str);
+
+		if (result == 0)
+			print_info(p->info);
+		else {
+			printf("%s\t", p->info.name);
+			if (result < 0) {
+				printf("Go to right.\n");
+				traversal_trace(p->right, str);
+			}
+			else {
+				printf("Go to left.\n");
+				traversal_trace(p->left, str);
+			}
+		}
+	}
+}
+void remove()
+{
+	char name[BUFFER_SIZE];
+	scanf("%s", name);
+	Node *tmp = ROOT;
+	tmp = tree_search(tmp, name);
+	if (tmp == NULL) {
+		printf("There is not anybody named %s.\n", name);
+		return;
+	}
+	tmp = tree_delete(tmp);
+
+	free(tmp);
+}
+Node *tree_delete(Node *cur)
+{
+	Node *x = NULL;
+	Node *y = NULL;
+	if (cur->left == NULL || cur->right == NULL)
+		y = cur;
+	else
+		y = tree_successor(cur);
+	if (y->left != NULL)
+		x = y->left;
+	else
+		x = y->right;
+	if (x != NULL)
+		x->parent = y->parent;
+	if (y->parent == NULL)
+		ROOT = x;
+	else if (y == y->parent->left)
+		y->parent->left = x;
+	else
+		y->parent->right = x;
+
+	if (y != cur)
+		cur->info = y->info;
+
+	return y;
+}
+Node *tree_successor(Node *x)
+{
+	if (x->right != NULL)
+		return tree_minimum(x->right);
+	Node *y = x->parent;
+	while (y != NULL&&x == y->right) {
+		x = y;
+		y = y->parent;
+	}
+	return y;
+}
+Node *tree_minimum(Node *x)
+{
+	while (x->left != NULL)
+		x = x->left;
+	return x;
+}
+void save()
+{
+	char fileN[BUFFER_SIZE];
+	scanf("%s", fileN);
+	Node *tmp = ROOT;
+	FILE *fp = fopen(fileN, "w");
+	write_file(fp,tmp);
+	fclose(fp);	
+}
+void write_file(FILE *fp, Node *p)
+{
+	if (p != NULL) {
+		write_file(fp, p->left);
+		fprintf(fp, "%-13s| ", p->info.name);
+		fprintf(fp, "%-33s| ", p->info.company);
+		fprintf(fp, "%-53s|  ", p->info.address);
+		fprintf(fp, "%-10s|  ", p->info.zipcode);
+		fprintf(fp, "%-13s|  ", p->info.phone);
+		fprintf(fp, "%s\n", p->info.email);
+		write_file(fp, p->right);
+	}
+}

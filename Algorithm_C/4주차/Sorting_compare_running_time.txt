@@ -1,0 +1,378 @@
+#pragma warning(disable:4996)
+#include<stdio.h>
+#include<stdlib.h>
+#include<time.h>
+#include<string.h>
+
+float BUBBLE[6];
+float SELECTION[6];
+float INSERTION[6];
+float MERGE[6];
+float QUICK[6];
+float QUICK_MEDIAN[6];
+float QUICK_RAND[6];
+
+void SelectionSort(int *arr, int size);
+void BubbleSort(int *arr, int size);
+void InsertionSort(int *arr, int size);
+void mergeSorting(int *arr, int begin, int end);
+void merge(int *arr, int begin, int middle, int end);
+void quickSort(int *data, int begin, int end);
+void quickSort_Med(int *data, int begin, int end);
+void quickSort_Ran(int *data, int begin, int end);
+int partition(int *data, int begin, int end);
+void swap(int *a, int *b);
+int partition_median_pivot(int *data, int begin, int end);
+int partition_random_pivot(int *data, int begin, int end);
+void print_table();
+void set_data(int **ran_d, int *rev_d, int size);
+float get_average(float *sec);
+void get_func_sec(char *func);
+
+int main()
+{
+	get_func_sec("bubble");
+	/*get_func_sec("insert");
+	get_func_sec("select");
+	get_func_sec("merge");
+	get_func_sec("quick");
+	get_func_sec("med_quick");
+	get_func_sec("rand_quick");*/
+
+	print_table();
+	return 0;
+}
+void SelectionSort(int *arr, int size)
+{
+	for (int i = size - 1;i > 0;i--) {
+		int idx = 0;
+		int max = arr[idx];
+		for (int j = 1;j <= i;j++)
+			if (arr[j] > max) {
+				max = arr[j];
+				idx = j;
+			}
+		int tmp = arr[i];
+		arr[i] = arr[idx];
+		arr[idx] = tmp;
+	}
+}
+void BubbleSort(int *arr, int size)
+{
+	for (int i = size - 1;i>0;i--)
+		for (int j = 0;j <= i - 1;j++)
+			if (arr[j] > arr[j + 1]) {
+				int tmp = arr[j];
+				arr[j] = arr[j + 1];
+				arr[j + 1] = tmp;
+			}
+}
+void InsertionSort(int *arr, int size)
+{
+	for (int i = 1;i < size;i++) {
+		int tmp = arr[i];
+		for (int j = i;j >= 0;j--) {
+			if (j == 0)
+				arr[j] = tmp;
+			else if (tmp >= arr[j - 1]) {
+				arr[j] = tmp;
+				break;
+			}
+			else
+				arr[j] = arr[j - 1];
+		}
+	}
+}
+void mergeSorting(int *arr, int begin, int end)
+{
+	if (begin < end) {
+		int q = (begin + end) / 2;
+		mergeSorting(arr, begin, q);
+		mergeSorting(arr, q + 1, end);
+		merge(arr, begin, q, end);
+	}
+}
+void merge(int *arr, int begin, int middle, int end)
+{
+	int i = begin, j = middle + 1, k = 0;
+	int *tmp = (int *)malloc(sizeof(int)*(end-begin+1));
+	while (i <= middle&&j <= end) {
+		if (arr[i] <= arr[j])
+			tmp[k++] = arr[i++];
+		else
+			tmp[k++] = arr[j++];
+	}
+	while (i <= middle)
+		tmp[k++] = arr[i++];
+	while (j <= end)
+		tmp[k++] = arr[j++];
+	int idx = 0;
+	for (int i = begin;i <= end;i++)
+		arr[i] = tmp[idx++];
+	
+	free(tmp);
+}
+void quickSort(int *data, int begin, int end)
+{
+	int pivot_idx;
+	if (begin < end) {
+		pivot_idx = partition(data, begin, end);
+		quickSort(data, begin, pivot_idx - 1);
+		quickSort(data, pivot_idx + 1, end);
+	}
+}
+void quickSort_Med(int *data, int begin, int end)
+{
+	int pivot_idx;
+	if (begin < end) {
+		pivot_idx = partition_median_pivot(data, begin, end);
+		quickSort(data, begin, pivot_idx - 1);
+		quickSort(data, pivot_idx + 1, end);
+	}
+}
+void quickSort_Ran(int *data, int begin, int end)
+{
+	int pivot_idx;
+	if (begin < end) {
+		pivot_idx = partition_random_pivot(data, begin, end);
+		quickSort(data, begin, pivot_idx - 1);
+		quickSort(data, pivot_idx + 1, end);
+	}
+}
+int partition(int *data, int begin, int end)
+{
+	//i=pivot보다 작은 값들 최상위 인덱스
+	//j=현재위치
+	int pivot = data[end];
+	int i = begin - 1;
+	for (int j = begin;j < end ;j++) {
+		if (data[j] <= pivot) {
+			i++;
+			swap(&data[i], &data[j]);
+		}
+	}
+	swap(&data[i + 1], &data[end]);
+
+	return (i + 1);
+}
+void swap(int *a, int *b)
+{
+	int tmp = *a;
+	*a = *b;
+	*b = tmp;
+}
+int partition_median_pivot(int *data, int begin, int end)
+{
+	int middle = (begin + end) / 2;
+	if (data[middle] < data[begin]) {
+		swap(&data[middle], &data[begin]);
+	}
+	if (data[middle] > data[end]) {
+		swap(&data[middle], &data[end]);
+	}
+	if (data[middle] < data[begin]) {
+		swap(&data[middle], &data[begin]);
+	}
+	int pivot = data[middle];
+	swap(&data[middle], &data[end - 1]);
+
+	int i = begin;
+	if (end - begin > 2) {
+		for (int j = begin + 1;j < end - 1;j++) {
+			if (data[j] <= pivot) {
+				i++;
+				swap(&data[i], &data[j]);
+			}
+		}
+		swap(&data[end - 1], &data[i + 1]);
+	}
+	return (i + 1);
+}
+int partition_random_pivot(int *data, int begin, int end)
+{
+	int size = end - begin + 1;
+	srand((unsigned)time(NULL));
+	int random_idx = rand() % size + begin;
+	int pivot = data[random_idx];
+	swap(&data[random_idx], &data[end]);
+	int i = begin - 1;
+	for (int j = begin;j < end;j++) {
+		if (data[j] <= pivot) {
+			i++;
+			swap(&data[i], &data[j]);
+		}
+	}
+	swap(&data[i + 1], &data[end]);
+
+	return (i + 1);
+}
+void print_table()
+{
+	printf("\t    Random1000\t Reverse1000\t Random 10000\t Reverse10000\t Random100000\t Reverse100000\n");
+	printf("\nBubble\t      ");
+	for (int i = 0;i < 6;i++)
+		printf("%f\t", BUBBLE[i]);
+	printf("\nSelection     ");
+	for (int i = 0;i < 6;i++)
+		printf("%f\t", SELECTION[i]);
+	printf("\nInsertion     ");
+	for (int i = 0;i < 6;i++)
+		printf("%f\t", INSERTION[i]);
+	printf("\nMerge\t      ");
+	for (int i = 0;i < 6;i++)
+		printf("%f\t", MERGE[i]);
+	printf("\nQuick1\t      ");
+	for (int i = 0;i < 6;i++)
+		printf("%f\t", QUICK[i]);
+	printf("\nQuick2\t      ");
+	for (int i = 0;i < 6;i++)
+		printf("%f\t", QUICK_MEDIAN[i]);
+	printf("\nQuick3\t      ");
+	for (int i = 0;i < 6;i++)
+		printf("%f\t", QUICK_RAND[i]);
+}
+float get_average(float *sec)
+{
+	float sum=0;
+	float average;
+	for (int i = 0;i < 10;i++)
+		sum += sec[i];
+	average = sum / 10;
+	
+	return average;
+}
+void get_func_sec(char *func)
+{
+	clock_t start, end;
+	float sec_ran[10], sec_rev;
+	int **random_data;
+	int *reverse_data;
+	int N=1000;
+	for (int k = 0;k < 3;k++) {
+		reverse_data = (int *)malloc(sizeof(int)*N);
+		random_data = (int **)malloc(sizeof(int*) * 10);
+		for (int i = 0;i < 10;i++) {
+			random_data[i] = (int*)malloc(sizeof(int)*N);
+		}
+		set_data(random_data, reverse_data, N);
+		if (strcmp(func, "bubble") == 0) {
+			for (int i = 0;i < 10;i++) {
+				start = clock();
+				BubbleSort(random_data[i], N);
+				end = clock();
+				sec_ran[i] = (float)(end - start) / CLOCKS_PER_SEC;
+			}
+			BUBBLE[k * 2] = get_average(sec_ran);
+			start = clock();
+			BubbleSort(reverse_data, N);
+			end = clock();
+			sec_rev = (float)(end - start) / CLOCKS_PER_SEC;
+			BUBBLE[k * 2 + 1] = sec_rev;
+		}
+		else if(strcmp(func,"select")==0){
+			for (int i = 0;i < 10;i++) {
+				start = clock();
+				SelectionSort(random_data[i], N);
+				end = clock();
+				sec_ran[i] = (float)(end - start) / CLOCKS_PER_SEC;
+			}
+			SELECTION[k * 2] = get_average(sec_ran);
+			start = clock();
+			SelectionSort(reverse_data, N);
+			end = clock();
+			sec_rev = (float)(end - start) / CLOCKS_PER_SEC;
+			SELECTION[k * 2 + 1] = sec_rev;
+		}
+		else if(strcmp(func,"insert")==0){
+			for (int i = 0;i < 10;i++) {
+				start = clock();
+				InsertionSort(random_data[i], N);
+				end = clock();
+				sec_ran[i] = (float)(end - start) / CLOCKS_PER_SEC;
+			}
+			INSERTION[k * 2] = get_average(sec_ran);
+			start = clock();
+			InsertionSort(reverse_data, N);
+			end = clock();
+			sec_rev = (float)(end - start) / CLOCKS_PER_SEC;
+			INSERTION[k * 2 + 1] = sec_rev;
+		}
+		else if (strcmp(func, "merge") == 0) {
+			for (int i = 0;i < 10;i++) {
+				start = clock();
+				mergeSorting(random_data[i],0, N-1);
+				end = clock();
+				sec_ran[i] = (float)(end - start) / CLOCKS_PER_SEC;
+			}
+			MERGE[k * 2] = get_average(sec_ran);
+			start = clock();
+			mergeSorting(reverse_data,0, N-1);
+			end = clock();
+			sec_rev = (float)(end - start) / CLOCKS_PER_SEC;
+			MERGE[k * 2 + 1] = sec_rev;
+		}
+		else if (strcmp(func, "quick") == 0) {
+			for (int i = 0;i < 10;i++) {
+				start = clock();
+				quickSort(random_data[i],0, N-1);
+				end = clock();
+				sec_ran[i] = (float)(end - start) / CLOCKS_PER_SEC;
+			}
+			QUICK[k * 2] = get_average(sec_ran);
+			start = clock();
+			quickSort(reverse_data,0, N-1);
+			end = clock();
+			sec_rev = (float)(end - start) / CLOCKS_PER_SEC;
+			QUICK[k * 2 + 1] = sec_rev;
+		}
+		else if (strcmp(func, "med_quick") == 0) {
+			for (int i = 0;i < 10;i++) {
+				start = clock();
+				quickSort_Med(random_data[i], 0, N - 1);
+				end = clock();
+				sec_ran[i] = (float)(end - start) / CLOCKS_PER_SEC;
+			}
+			QUICK_MEDIAN[k * 2] = get_average(sec_ran);
+			start = clock();
+			quickSort_Med(reverse_data, 0, N - 1);
+			end = clock();
+			sec_rev = (float)(end - start) / CLOCKS_PER_SEC;
+			QUICK_MEDIAN[k * 2 + 1] = sec_rev;
+		}
+		else if (strcmp(func, "rand_quick") == 0) {
+			for (int i = 0;i < 10;i++) {
+				start = clock();
+				quickSort_Ran(random_data[i], 0, N - 1);
+				end = clock();
+				sec_ran[i] = (float)(end - start) / CLOCKS_PER_SEC;
+			}
+			QUICK_RAND[k * 2] = get_average(sec_ran);
+			start = clock();
+			quickSort_Ran(reverse_data, 0, N - 1);
+			end = clock();
+			sec_rev = (float)(end - start) / CLOCKS_PER_SEC;
+			QUICK_RAND[k * 2 + 1] = sec_rev;
+		}
+		else {
+			printf("There is no any function named like that.\n");
+			exit;
+		}
+		N *= 10;
+		for (int i = 0;i < 10;i++)
+			free(random_data[i]);
+		free(random_data);
+		free(reverse_data);
+	}
+}
+void set_data(int **ran_d, int *rev_d, int size)
+{
+
+	for (int i = 0;i < 10;i++) {
+		srand((unsigned)time(NULL));
+		for (int j = 0;j < size;j++)
+			ran_d[i][j] = rand() % size + 1;
+	}
+	for (int i = 0;i < size;i++) {
+		rev_d[i] = size - i;
+	}
+}

@@ -1,0 +1,84 @@
+#pragma warning(disable: 4996)
+
+#include<stdio.h>
+#include<stdlib.h>
+
+void Matrix_Chain_Multiple(int n, int *matrix);
+void print_optimal_parnes(int **s, int i, int j);
+
+int main()
+{
+	int n;
+	int *matrix;
+	FILE *fp = fopen("input.txt", "r");
+	if (fp == NULL) {
+		printf("No file exists.\n");
+		return 0;
+	}
+	while (!feof(fp)) {
+		fscanf(fp, "%d", &n);
+		matrix = (int *)malloc(sizeof(int)*(n+1));
+		for (int i = 0;i <= n;i++)
+			fscanf(fp, "%d", &matrix[i]);
+		Matrix_Chain_Multiple(n, matrix);
+		free(matrix);
+	}
+	fclose(fp);
+
+	return 0;
+}
+void Matrix_Chain_Multiple(int n, int *p)
+{
+	int **m = (int **)malloc(sizeof(int *)*(n+1));
+	int **s = (int **)malloc(sizeof(int *)*(n + 1));
+	for (int i = 0;i <= n;i++) {
+		m[i] = (int *)malloc(sizeof(int)*(n + 1));
+		s[i] = (int *)malloc(sizeof(int)*(n + 1));
+	}
+	for (int i = 0;i <= n;i++) 
+		for (int j = 0;j <= n;j++) 
+			s[i][j] = 0;
+
+	for (int i = 1;i <= n;i++)
+		m[i][i] = 0;
+	for (int r = 1;r <= n - 1;r++) {
+		for (int i = 1;i <= n - r;i++) {
+			int j = i + r;
+			m[i][j] = m[i + 1][j] + p[i - 1] * p[i] * p[j];
+			
+			for (int k = i + 1;k <= j - 1;k++) {
+				if (m[i][j] > m[i][k] + m[k + 1][j] + p[i - 1] * p[k] * p[j]) {
+					m[i][j] = m[i][k] + m[k + 1][j] + p[i - 1] * p[k] * p[j];
+					s[i][j] = k;
+				}
+				if (s[i][j] == 0)
+					s[i][j] = i;
+			}
+		}
+	}
+	printf("%d\n\n", m[1][n]);
+
+	print_optimal_parnes(s, 1, n);
+
+	for (int i = 0;i <= n;i++) {
+		free(m[i]);
+		free(s[i]);
+	}
+	free(s);
+}
+void print_optimal_parnes(int **s, int i, int j)
+{
+	if (s[i][j] == 0) {
+		printf("A%d ", i);
+		if (i != j)
+			printf("A%d ", j);
+		return;
+	}
+	else {
+		printf("( ");
+		print_optimal_parnes(s, i, s[i][j]);
+		printf(") ( ");
+		print_optimal_parnes(s, s[i][j] + 1, j);
+		printf(") ");
+	}
+}

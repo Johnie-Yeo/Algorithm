@@ -1,0 +1,41 @@
+void SelectionSort(int *arr, int size)
+{
+	for (int i = size - 1;i > 0;i--) {
+		int idx = 0;
+		int max = arr[idx];
+		for (int j = 1;j <= i;j++)
+			if (arr[j] > max) {
+				max = arr[j];
+				idx = j;
+			}
+		int tmp = arr[i];
+		arr[i] = arr[idx];
+		arr[idx] = tmp;
+	}
+}
+void BubbleSort(int *arr, int size)
+{
+	for(int i=size-1;i>0;i--)
+		for(int j=0;j<=i-1;j++)
+			if (arr[j] > arr[j + 1]) {
+				int tmp = arr[j];
+				arr[j] = arr[j + 1];
+				arr[j + 1] = tmp;
+			}
+}
+void InsertionSort(int *arr, int size)
+{
+	for (int i = 1;i < size;i++) {
+		int tmp = arr[i];
+		for (int j = i;j >= 0;j--) {
+			if (j == 0)
+				arr[j] = tmp;
+			else if (tmp >= arr[j - 1]) {
+				arr[j] = tmp;
+				break;
+			}
+			else
+				arr[j] = arr[j - 1];
+		}
+	}
+}

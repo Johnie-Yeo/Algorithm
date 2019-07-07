@@ -1,0 +1,27 @@
+int partition_middle_pivot(int *data, int begin, int end)
+{
+	int middle = (begin + end) / 2;
+	if (data[middle] < data[begin]) {
+		swap(&data[middle], &data[begin]);
+	}
+	if (data[middle] > data[end]) {
+		swap(&data[middle], &data[end]);
+	}
+	if (data[middle] < data[begin]) {
+		swap(&data[middle], &data[begin]);
+	}
+	int pivot = data[middle];
+	swap(&data[middle], &data[end - 1]);
+
+	int i = begin;
+	if (end - begin > 2) {
+		for (int j = begin + 1;j < end - 1;j++) {
+			if (data[j] <= pivot) {
+				i++;
+				swap(&data[i], &data[j]);
+			}
+		}
+		swap(&data[end - 1], &data[i + 1]);
+	}
+	return (i + 1);
+}

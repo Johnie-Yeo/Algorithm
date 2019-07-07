@@ -1,0 +1,20 @@
+int partition_random_pivot(int *data, int begin, int end)
+{
+	int size = end - begin + 1;
+	srand((unsigned)time(NULL));
+	int random_idx = rand() % size + begin;
+	int pivot = data[random_idx];
+	swap(&data[random_idx], &data[end]);
+	int i = begin - 1;
+	for (int j = begin;j < end;j++) {
+		if (data[j] <= pivot) {
+			i++;
+			swap(&data[i], &data[j]);
+		}
+	}
+	swap(&data[i + 1], &data[end]);
+
+	return (i + 1);
+}
+
+//다른방법 찾아보기

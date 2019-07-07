@@ -1,0 +1,78 @@
+#pragma warning(disable:4996)
+#include<stdio.h>
+#include<stdbool.h>
+
+#define MAX 100
+
+int idx_check;
+
+int input();
+bool check_ascending_order(int size_arr, int *arr);
+int number_of_combination(int count, int start_idx, int end_idx, int val, int *arr);
+
+int main()
+{
+	input();
+
+	return 0;
+}
+int input()
+{
+	int data[MAX];
+	int N, K;
+	printf("The size of array: ");
+	scanf("%d", &N);
+	if (N == -1)
+		return 0;
+	else {
+		printf("Array[%d]: ", N);
+		for (int i = 0;i < N;i++)
+			scanf("%d", &data[i]);
+		idx_check = 0;
+		if (!check_ascending_order(N, data)) {
+			printf("You must set data as ascending order.\n");
+			return input();
+		}
+		printf("Value: ");
+		scanf("%d", &K);
+
+		int start = 0, end = N - 1;
+		int count = 0;
+
+		printf("The number of combination: %d\n", number_of_combination(count,start, end, K, data));
+
+		return input();
+	}
+}
+bool check_ascending_order(int size_arr, int *arr)
+{
+	if (size_arr == idx_check+1)
+		return true;
+
+	if (*arr < *(arr+1)) {
+		idx_check++;
+		check_ascending_order(size_arr, arr + 1);
+	}
+	else
+		return false;
+}
+int number_of_combination(int count,int start_idx, int end_idx, int val, int *arr)
+{
+
+	if (start_idx >= end_idx)
+		return count;
+
+	int sum = arr[start_idx] + arr[end_idx];
+
+	if (sum > val)
+		end_idx--;
+	else if (sum < val)
+		start_idx++;
+	else {
+		start_idx++;
+		end_idx--;
+		count++;
+	}
+	
+	return number_of_combination(count,start_idx, end_idx, val, arr);
+}

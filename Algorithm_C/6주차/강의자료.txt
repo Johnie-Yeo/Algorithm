@@ -1,0 +1,161 @@
+#include<stdio.h>
+#include<stdlib.h>
+
+typedef struct node{
+	int data;
+	struct node *right;
+	struct node *left;
+	struct node *parent;
+}Node;
+
+int n = 0;//number of node
+Node *ROOT=NULL;
+
+void node_mallocation(Node *cur, int data);
+int main()
+{
+	int tmp;
+	Node *current;
+	printf("DATA: ");
+	scanf("%d", &tmp);
+
+}
+void node_mallocation(Node *cur,int data)
+{
+	cur = (Node *)malloc(sizeof(Node));
+	cur->data = data;
+	cur->left = NULL;
+	cur->right = NULL;
+}
+void inorder_traversal(Node *root)
+{
+	if (root != NULL){
+		inorder_traversal(root->left);
+		printf("%d", root->data);
+		inorder_traversal(root->right);
+	}
+}
+void preorder_traveral(Node *x)
+{
+	if (x != NULL) {
+		printf("%d", x->data);
+		preorder_traversal(x->left);
+		preorder_traversal(x->right);
+	}
+}
+void postorder_traversal(Node *x)
+{
+	if (x != NULL) {
+		postorder_traversal(x->left);
+		postorder_traversal(x->right);
+		printf("%d", x->data);
+	}
+
+}
+void level_order_traversal()
+{
+	Queue = ROOT->data;
+	while (Queue != NULL) {
+		Node *v = dequeue(Queue);
+		enqueue(Queue, v->left);
+		enqueue(Queue, v->right);
+	}
+}
+Node *tree_search(Node *x, int k)
+{
+	if (x == NULL || k == x->data)
+		return x;
+	if (k < x->data)
+		return tree_search(x->left, k);
+	else
+		return tree_search(x->right, k);
+}
+Node *interative_tree_search(Node *x, int k)
+{
+	while (x != NULL&&k != x->data) {
+		if (k < x->data)
+			x = x->left;
+		else
+			x = x->right;
+	}
+	return x;
+}
+Node *tree_minimum(Node *x)
+{
+	while (x->left != NULL)
+		x = x->left;
+	return x;
+}
+Node *tree_maximum(Node *x)
+{
+	while (x->right != NULL)
+		x = x->right;
+	return x;
+}
+Node *tree_successor(Node *x)
+{
+	if (x->right != NULL)
+		return tree_minimum(x->right);
+	Node *y = x->parent;
+	while (y != NULL&&x == y->right) {
+		x = y;
+		y = y->parent;
+	}
+	return y;
+}
+Node *tree_predecessor(Node *x)
+{
+	if (x->left != NULL)
+		return tree_maximum(x->left);
+	Node *y = x->parent;
+	while (y != NULL&&x == y->left) {
+		x = y;
+		y = y->parent;
+	}
+	return y;
+}
+void tree_insert(Node *cur)
+{
+	Node *y = NULL;
+	Node *x = ROOT;
+	while (x != NULL) {
+		y = x;
+		if (cur->data < x->data) 
+			x = x->left;
+		else
+			x = x->right;
+	}
+	cur->parent = y;
+	if (y == NULL)
+		ROOT = cur;
+	else if (cur->data < y->data)
+		y->left = cur;
+	else
+		y->right = cur;
+}
+Node *tree_delete(Node *cur)
+{
+	Node *x = NULL;
+	Node *y = NULL;
+	if (cur->left == NULL || cur->right == NULL)
+		y = cur;
+	else
+		y = tree_successor(cur);
+	if (y->left != NULL)
+		x = y->left;
+	else
+		x = y->right;
+	if (x != NULL)
+		x->parent = y->parent;
+	if (y->parent == NULL)
+		ROOT = x;
+	else if (y == y->parent->left)
+		y->parent->left = x;
+	else
+		y->parent->right = x;
+
+	if (y != cur)
+		cur->data = y->data;
+
+	return y;
+}

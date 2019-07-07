@@ -1,0 +1,72 @@
+#pragma warning(disable:4996)
+
+#include<stdio.h>
+#include<stdbool.h>
+
+
+void swap(int *a, int *b);
+void max_heapify(int *A, int i, int size);
+bool has_child(int *A, int i, int size);
+int bigger_child(int *A, int i, int size);
+void build_max_heap(int *A, int size);
+void heapSort(int *A, int size);
+
+int main()
+{
+	int data[10];
+	while (1) {
+		printf("$ ");
+		for (int i = 0;i < 10;i++)
+			scanf("%d", &data[i]);
+		if (*data == -1)
+			break;
+		heapSort(data, 10);
+		for (int i = 0;i <10;i++)
+			printf("%d", data[i]);
+		printf("\n");
+	}
+	return 0;
+}
+void swap(int *a, int *b)
+{
+	int tmp = *a;
+	*a = *b;
+	*b = tmp;
+}
+void max_heapify(int *A, int i, int size)
+{
+	if (!has_child(A, i, size))
+		return;
+	int k = bigger_child(A, i,size);
+	if (A[i] >= A[k])
+		return;
+	swap(&A[i], &A[k]);
+	max_heapify(A, k,size);
+}
+bool has_child(int *A, int i, int size)
+{
+	if (2 * i +1 <= size - 1)
+		return true;
+	return false;
+}
+int bigger_child(int *A, int i,int size)
+{
+	if (2 * i + 2 > size - 1 ||A[2 * i+1] > A[2 * i + 2])
+		return 2 * i + 1;
+	else
+		return 2 * i + 2;
+}
+void build_max_heap(int *A, int size)
+{
+	for (int i = size / 2 - 1;i >= 0;i--)
+		max_heapify(A, i,size);
+}
+void heapSort(int *A, int size)
+{
+	build_max_heap(A, size);
+	for (int i = size-1;i > 0;i--) {
+		swap(&A[0], &A[i]);
+		size--;
+		max_heapify(A, 0, size);
+	}
+}

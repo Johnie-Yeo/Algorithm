@@ -1,0 +1,315 @@
+#pragma warning(disable:4996)
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#include<stdbool.h>
+#include<math.h>
+#include"queue.h"
+
+typedef struct info {
+	char *name;
+	double longitude;
+	double latitude;
+	double weight;
+	struct info *next;
+}Info;
+
+#define LINE_LENGTH 200
+#define PI acos(-1.0)
+#define INFO_SIZE 15000
+
+Info *info_alab[INFO_SIZE];
+
+int num_info = 0;//number of info
+
+double  calDistance(double  lat1, double  lon1, double  lat2, double  lon2);
+double  deg2rad(double  deg);
+double  rad2deg(double  rad);
+void read_info();
+int read_line(FILE *fp, char str[], int n);
+void add(char *line);
+void read_roadList();
+int find_area(char *str);
+void add_road(char *line);
+int * MST_Kruskal();
+void print_table(int *p);
+void make_set(int a[]);
+int find_set_PC(int x, int p[]);
+void weighted_union(int idx1, int idx2, int p[], int *size, int *A);
+void lowest_edge(Info **tmp, int *u, int *v);
+
+int main()
+{
+	read_info();
+	read_roadList();
+	int *mst = MST_Kruskal();
+	print_table(mst);
+
+	return 0;
+}
+void print_tmp()
+{
+	FILE *fp = fopen("tmp.txt", "w");
+	for (int i = 0;i < num_info;i++) {
+		Info *cur = info_alab[i];
+		while ((cur = cur->next) != NULL) {
+			fprintf(fp, "%s\t%s\n", info_alab[i]->name, cur->name);
+		}
+	}
+	fclose(fp);
+}
+void read_info()
+{
+	char buffer[LINE_LENGTH];
+	FILE *fp = fopen("alabama.txt", "r");
+	if (fp == NULL) {
+		printf("No file.\n");
+		return;
+	}
+	while (!feof(fp)) {
+		if (read_line(fp, buffer, LINE_LENGTH)>0)
+			add(buffer);
+	}
+	fclose(fp);
+}
+int read_line(FILE *fp, char str[], int n)
+{
+	int ch, i = 0;
+
+	while ((ch = fgetc(fp)) != '\n'&&ch != EOF)
+		if (i < n)
+			str[i++] = ch;
+	str[i] = '\0';
+	return i;
+}
+void add(char *line)
+{
+	char *buffer;
+	buffer = strtok(line, "\t");
+	info_alab[num_info] = (Info *)malloc(sizeof(Info));
+	info_alab[num_info]->name = strdup(buffer);
+	buffer = strtok(NULL, "\t");
+	info_alab[num_info]->longitude = atof(buffer);
+	buffer = strtok(NULL, "\t");
+	info_alab[num_info]->latitude = atof(buffer);
+	info_alab[num_info]->weight = 0;
+	info_alab[num_info]->next = NULL;
+
+	num_info++;
+}
+void read_roadList()
+{
+	char buffer[LINE_LENGTH];
+	FILE *fp = fopen("roadList2.txt", "r");
+	if (fp == NULL) {
+		printf("No file.\n");
+		return;
+	}
+	while (!feof(fp)) {
+		if (read_line(fp, buffer, LINE_LENGTH)>0)
+			add_road(buffer);
+	}
+	fclose(fp);
+}
+void add_road(char *line)
+{
+	char *buffer;
+	char *buffer2;
+	buffer = strtok(line, "\t");
+	int idx = find_area(buffer);
+	if (idx < 0) {
+		printf("Error!.\n");
+		return;
+	}
+	buffer2 = strtok(NULL, "\t");
+	int idx2 = find_area(buffer2);
+	if (idx2 < 0) {
+		printf("Error!.\n");
+		return;
+	}
+	Info *tmp = (Info *)malloc(sizeof(Info));
+	tmp->name = strdup(buffer2);
+	tmp->weight = calDistance(info_alab[idx]->latitude, info_alab[idx]->longitude, info_alab[idx2]->latitude, info_alab[idx2]->longitude);
+	tmp->latitude = info_alab[idx2]->latitude;
+	tmp->longitude = info_alab[idx2]->longitude;
+	if (info_alab[idx]->next == NULL) {
+		info_alab[idx]->next = tmp;
+		tmp->next = NULL;
+	}
+	else {
+		Info *cur = info_alab[idx]->next;
+		if (cur->weight >= tmp->weight) {
+			tmp->next = cur;
+			info_alab[idx]->next = tmp;
+		}
+		else {
+			Info *q = NULL;
+			while (cur!=NULL&&cur->weight < tmp->weight) {
+				q = cur;
+				cur = cur->next;
+			}
+			q->next = tmp;
+			tmp->next = cur;
+		}
+	}
+	Info *tmp2 = (Info *)malloc(sizeof(Info));
+	tmp2->name = strdup(buffer);
+	tmp2->weight = tmp->weight;
+	tmp2->latitude = info_alab[idx]->latitude;
+	tmp2->longitude = info_alab[idx]->longitude;
+	if (info_alab[idx2]->next == NULL) {
+		info_alab[idx2]->next = tmp2;
+		tmp2->next = NULL;
+	}
+	else {
+		Info *cur = info_alab[idx2]->next;
+		if (cur->weight >= tmp2->weight) {
+			tmp2->next = cur;
+			info_alab[idx2]->next = tmp2;
+		}
+		else {
+			Info *q = NULL;
+			while (cur!=NULL&&cur->weight < tmp2->weight) {
+				q = cur;
+				cur = cur->next;
+			}
+			q->next = tmp2;
+			tmp2->next = cur;
+		}
+	}
+}
+int find_area(char *str)
+{
+	for (int i = 0;i < INFO_SIZE;i++)
+		if (info_alab[i] != NULL&&strcmp(str, info_alab[i]->name) == 0)
+			return i;
+	return -1;
+}
+double  calDistance(double  lat1, double  lon1, double  lat2, double  lon2) {
+	double  theta, dist;
+	theta = lon1 - lon2;
+	dist = sin(deg2rad(lat1)) * sin(deg2rad(lat2)) + cos(deg2rad(lat1))
+		* cos(deg2rad(lat2)) * cos(deg2rad(theta));
+
+	dist = acos(dist);
+	dist = rad2deg(dist);
+	dist = dist * 60 * 1.1515;
+	dist = dist  *  1.609344;        //  단위  mile  에서  km  변환.       
+	dist = dist  *  1000.0;            //  단위    km  에서  m  로변환        
+	return  dist;
+}
+//  주어진도(degree)  값을라디언으로변환    
+double  deg2rad(double  deg) {
+	return  (double)(deg  * PI / (double)180);
+}
+//  주어진라디언(radian)  값을도(degree)  값으로변환    
+double  rad2deg(double  rad) {
+	return  (double)(rad  *  (double)180 / PI);
+}
+int *MST_Kruskal()
+{
+	int *A = (int *)malloc(sizeof(int)*num_info);
+	int *parent = (int *)malloc(sizeof(int)*(num_info));
+	int *size = (int *)malloc(sizeof(int)*(num_info));
+	Info **tmp = (Info **)malloc(sizeof(Info *)*(num_info));
+	for (int i = 0;i < num_info;i++) {
+		size[i] = 1;
+		tmp[i] = info_alab[i]->next;
+	}
+	make_set(parent);
+	int num_edge = 0;
+	while (num_edge<num_info-1) {
+		int u;//lowest edge's depart index
+		int v;//lowest edge's destin index
+		lowest_edge(tmp, &u, &v);
+		if (find_set_PC(u, parent) != find_set_PC(v, parent)) {
+			weighted_union(u, v, parent, size,A);
+			num_edge++;
+		}
+		if (tmp[u] != NULL) {
+			if (tmp[u]->next == NULL) {
+				tmp[u]->weight = INFINITY;
+			}
+			else
+				tmp[u] = tmp[u]->next;
+		}
+	}
+	printf("ROOT: ");
+	for (int i = 0;i < num_info;i++)
+		if (i == parent[i])
+			printf("%d", i);
+	printf("\n");//for test to prove tree has only one root aka connected graph
+	free(size);
+	free(tmp);
+	free(parent);
+
+	return A;
+}
+void lowest_edge(Info **tmp,int *u,int *v)
+{
+	static int abc = 0;
+	abc++;
+	if (abc == 5662)
+		printf("!");
+	int min_idx = 0;
+	for (int i = 1;i < num_info;i++)
+		if (tmp[i] != NULL&&tmp[i]->weight < tmp[min_idx]->weight)
+			min_idx = i;
+	*u = min_idx;
+	*v = find_area(tmp[min_idx]->name);
+}
+void weighted_union(int idx1, int idx2, int p[], int *size, int *A)
+{
+	int x = find_set_PC(idx1, p);
+	int y = find_set_PC(idx2, p);
+	if (size[x] > size[y]) {
+		p[y] = x;
+		A[y] = x;
+		size[x] += size[y];
+	}
+	else {
+		p[x] = y;
+		A[x] = y;
+		size[y] += size[x];
+	}
+}
+int find_set_PC(int x, int p[])
+{
+	while (x != p[x]) {
+		p[x] = p[p[x]];
+		x = p[x];
+	}
+	return p[x];
+}
+void make_set(int a[])
+{
+	for (int i = 0;i < num_info;i++)
+		a[i] = i;
+}
+void print_table(int *p)
+{
+	FILE *fp = fopen("mst.txt", "w");
+	int num_edge = 0;
+	for (int i = 0;i < num_info;i++) {
+		fprintf(fp, "%d %lf %lf\t", i, info_alab[i]->longitude, info_alab[i]->latitude);
+		if (p[i] != i) {
+			fprintf(fp, " %d ", p[i]);
+			num_edge++;
+		}
+		for (int j = 0;j < num_info;j++) {
+			if (j == i)
+				continue;
+			else {
+				if (p[j] == i) {
+					fprintf(fp, " %d ", j);
+					num_edge++;
+				}
+			}
+		}
+		fprintf(fp, "\n");
+	}
+	fprintf(fp, "The number of edge= %d", num_edge / 2);
+	fclose(fp);
+	free(p);
+}

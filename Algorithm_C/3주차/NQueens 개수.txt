@@ -1,0 +1,16 @@
+
+int queens(int level) {
+	int result = 0;
+	if (!promising(level))
+		return 0;
+	else if (level == N) {
+		return 1;
+	}
+	else {
+		for (int i = 1; i <= N; i++) {
+			cols[level + 1] = i;
+			result += queens(level+1);
+		}
+		return result;
+	}
+}

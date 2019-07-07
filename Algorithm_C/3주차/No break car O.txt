@@ -1,0 +1,49 @@
+import java.util.Scanner;
+
+public class Code03 {
+   static int maze[][];
+   static int N;
+   static int [][]dirarr =  {{-1,0},{0,1},{1,0},{0,-1}};
+   static int dir = 0;
+   public static void main(String[] args) {
+      Scanner kb = new Scanner(System.in);
+      N=kb.nextInt();
+      maze = new int [N][N];
+      for(int i = 0; i<N;i++)
+      {
+         for (int j = 0;j<N;j++)
+         {
+            maze[j][i]=kb.nextInt();
+         }
+      }
+      kb.close();
+      if(no_break(0,0,0))System.out.println("이 미로는 탈출 가능하다.");
+      else System.out.println("이 미로는 탈출 불가능 하다.");
+   }
+
+   static boolean no_break(int x,int y,int dir)
+   {
+      if (x<0||y<0||x>=N||y>=N||maze[x][y]!=0)
+         return false;
+      else if (x==N-1 && y==N-1)
+         {
+            maze[x][y] =2;
+            return true;
+         }
+      else
+      {
+         maze[x][y]=2;
+         for(dir = 0 ; dir<4;dir++)
+         {
+            while(true)
+            {
+               if (x<0||y<0||x>=N||y>=N||maze[x][y]!=0)break;
+               x+=dirarr[dir][0];
+               y+=dirarr[dir][1];
+            }
+            if(no_break(x-dirarr[dir][0],y-dirarr[dir][1],dir))return true;
+         }
+      }
+      return false;
+   }
+}

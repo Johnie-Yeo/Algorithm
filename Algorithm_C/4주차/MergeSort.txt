@@ -1,0 +1,29 @@
+void mergeSorting(int *arr, int begin, int end)
+{
+	if (begin < end) {
+		int q = (begin + end) / 2;
+		mergeSorting(arr, begin, q);
+		mergeSorting(arr, q + 1, end);
+		merge(arr, begin, q, end);
+	}
+}
+void merge(int *arr, int begin, int middle, int end)
+{
+	int i = begin, j = middle + 1, k = 0;
+	int *tmp = (int *)malloc(sizeof(int)*(end-begin+1));
+	while (i <= middle&&j <= end) {
+		if (arr[i] <= arr[j])
+			tmp[k++] = arr[i++];
+		else
+			tmp[k++] = arr[j++];
+	}
+	while (i <= middle)
+		tmp[k++] = arr[i++];
+	while (j <= end)
+		tmp[k++] = arr[j++];
+	int idx = 0;
+	for (int i = begin;i <= end;i++)
+		arr[i] = tmp[idx++];
+	
+	free(tmp);
+}

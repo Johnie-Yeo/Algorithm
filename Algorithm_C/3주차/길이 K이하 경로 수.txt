@@ -1,0 +1,82 @@
+#pragma warning(disable:4996)
+
+#include <stdio.h>
+#include <stdlib.h>
+#include<stdbool.h>
+
+int N;
+int K;
+int **maze;
+
+void maze_mallocation(int n);
+void maze_free(int n);
+int MazePath(int result, int x, int y, int dist);
+
+int main()
+{
+	int T;
+	FILE *fp = fopen("input1.txt", "r");
+	fscanf(fp, "%d", &T);
+	for (int i = 0;i < T;i++) {
+		fscanf(fp, "%d", &N);
+		maze_mallocation(N);
+		for (int p = 0;p < N;p++) {
+			for (int q = 0;q < N;q++) {
+				fscanf(fp, "%d", &maze[p][q]);
+			}
+		}
+		fscanf(fp, "%d", &K);
+
+		static int count = 0;
+		int result = MazePath(0,0, 0, 0);
+		result -= count;
+		count += result;
+		if (result == -1)
+			printf("There is not any path in this maze.\n");
+		else
+			printf("The number of path which takes shorter than %d move : %d\n", K, result);
+		
+	}
+	fclose(fp);
+}
+void maze_mallocation(int n)
+{
+	maze = (int **)malloc(sizeof(int *)*n);
+	for (int i = 0;i < n;i++) {
+		maze[i] = (int *)malloc(sizeof(int)*n);
+	}
+}
+void maze_free(int n)
+{
+	for (int i = 0;i < n;i++)
+		free(maze[i]);
+	free(maze);
+}
+int MazePath(int result, int x, int y, int dist)
+{ 
+	static int count = 0;
+	if (x < 0 || y < 0 || x >= N || y >= N || maze[x][y] != 0) {
+		return -1;
+	}
+	else if (dist > K) {
+		maze[x][y] = 0;
+		return -1;
+	}
+	else if (x == N - 1 && y == N - 1) { 
+		count++;
+		return 0; 
+	} 
+	else { 
+		maze[x][y] = 2; 
+		MazePath(result, x - 1, y, dist + 1);
+		MazePath(result, x, y + 1, dist + 1);
+		MazePath(result, x + 1, y, dist + 1);
+		MazePath(result, x, y - 1, dist + 1);
+		
+		maze[x][y] = 0;
+		
+		return count;
+     
+		return -1; 
+	} 
+}

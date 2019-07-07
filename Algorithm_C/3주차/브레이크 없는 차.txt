@@ -1,0 +1,232 @@
+#pragma warning(disable:4996)
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<stdbool.h>
+
+typedef struct {
+	int x, y;
+}Pos;
+
+Pos NORTH = { -1,0 };
+Pos EAST = { 0,1 };
+Pos SOUTH = { 1,0 };
+Pos WEST = { 0,-1 };
+
+#define PATH 0
+#define WALL 1
+#define BLOCK 2
+int N;
+int **maze;
+
+void maze_mallocation(int n);
+void maze_free(int n);
+bool available_to_destination(Pos point,Pos dir);
+Pos get_neighbor(Pos point, Pos dir);
+Pos add(Pos a, Pos b);
+bool Comp(Pos a, Pos b);
+
+int main()
+{
+	int T;
+	FILE *fp = fopen("input2.txt", "r");
+	fscanf(fp, "%d", &T);
+	for (int i = 0;i < T;i++) {
+		fscanf(fp, "%d", &N);
+		maze_mallocation(N);
+		for (int p = 0;p < N;p++) {
+			for (int q = 0;q < N;q++) {
+				fscanf(fp, "%d", &maze[p][q]);
+			}
+		}
+		Pos start = { 0,0 };
+		if (available_to_destination(start, { 0,0 }))
+			printf("Available!\n");
+		else
+			printf("Not Available!\n");
+		maze_free(N);
+	}
+	fclose(fp);
+}
+void maze_mallocation(int n)
+{
+	maze = (int **)malloc(sizeof(int *)*n);
+	for (int i = 0;i < n;i++) {
+		maze[i] = (int *)malloc(sizeof(int)*n);
+	}
+}
+void maze_free(int n)
+{
+	for (int i = 0;i < n;i++)
+		free(maze[i]);
+	free(maze);
+}
+bool available_to_destination(Pos point,Pos dir)
+{
+	if (maze[point.x][point.y] == BLOCK)
+		return false;
+	if (point.x == N - 1 && point.y == N - 1) {
+		maze[point.x][point.y] = BLOCK;
+		return true;
+	}
+	else {
+		Pos tmpN = get_neighbor(point, NORTH);
+		Pos tmpE= get_neighbor(point, EAST);
+		Pos tmpS= get_neighbor(point, SOUTH);
+		Pos tmpW= get_neighbor(point, WEST);
+		if (Comp(dir, { 0,0 })) {
+			if (!Comp(tmpE, point)) {
+				maze[point.x][point.y] = BLOCK;
+				if (available_to_destination(tmpE, EAST))
+					return true;
+			}
+				if (!Comp(tmpS, point)) {
+					maze[point.x][point.y] = BLOCK;
+					if (available_to_destination(tmpS, SOUTH))
+						return true;
+				}
+			
+			else
+				return false;
+		}
+		if (Comp(dir, NORTH) || Comp(dir, SOUTH)) {
+			if (!Comp(tmpE, point)) {
+				maze[point.x][point.y] = BLOCK;
+				if (available_to_destination(tmpE, EAST))
+					return true;
+			}
+			if (!Comp(tmpW, point)) {
+				maze[point.x][point.y] = BLOCK;
+				if (available_to_destination(tmpW, WEST))
+					return true;
+			}
+				else
+					return false;
+			
+		}
+		else if (Comp(dir, EAST) || Comp(dir, WEST)) {
+			if (!Comp(tmpN, point)) {
+				maze[point.x][point.y] = BLOCK;
+				if (available_to_destination(tmpN, NORTH))
+					return true;
+			}
+				if (!Comp(tmpS, point)) {
+					maze[point.x][point.y] = BLOCK;
+					if (available_to_destination(tmpS, SOUTH))
+						return true;
+				}
+			
+			else
+				return false;
+		}
+		
+		maze[point.x][point.y] = PATH;
+		return false;
+	}
+}
+Pos add(Pos a, Pos b)
+{
+	return { a.x + b.x,a.y + b.y };
+}
+bool Comp(Pos a, Pos b)
+{
+	if (a.x == b.x&&a.y == b.y)
+		return true;
+	else
+		return false;
+}
+Pos get_neighbor(Pos point, Pos dir)
+{
+	if (point.x < 0 || point.y < 0 || point.x >= N || point.y >= N || maze[point.x][point.y] == WALL) {
+		return add(point, { -dir.x,-dir.y });
+	}
+	else if (maze[point.x][point.y] == BLOCK) {
+		return point;
+	}
+	else {
+		return get_neighbor(add(point, dir), dir);
+	}
+}
+//if (point.x < 0 || point.y < 0 || point.x >= N || point.y >= N || maze[point.x][point.y] != PATH) {
+	//	stop = true;
+	//	return false;
+	//}
+
+	//else if (point.x == N - 1 && point.y == N - 1) {
+	//	maze[point.x][point.y] = BLOCK;
+	//	return true; 
+	//}
+
+	//else {
+	//	maze[point.x][point.y] = BLOCK;
+	//	if (stop == true) {
+	//		// 정지한 이후이므로 북동남서 탐색
+	//		if (available_to_destination(add(point, NORTH), NORTH, false) || available_to_destination(add(point, EAST), EAST, false) ||
+	//			available_to_destination(add(point, SOUTH), SOUTH, false) || available_to_destination(add(point, WEST), WEST, false))
+	//			return true;
+	//		return false;
+	//	}
+	//	//진행 방향과 동일한 방향으로 직진
+	//	//더이상 진행을 못하면 stop==true
+	//	if (Comp(dir, NORTH)) {
+	//		if (available_to_destination(add(point, dir), dir, stop))
+	//			return true;
+	//		else {
+	//			Pos tmp = add(point, dir);
+	//			if (maze[tmp.x][tmp.y] == WALL||tmp.y<0) {
+	//				stop = true;
+	//				maze[point.x][point.y] = PATH;
+	//				if (available_to_destination(point, dir, stop))
+	//					return true;
+	//			}
+	//			else
+	//				return false;
+	//		}
+	//	}
+	//	else if (Comp(dir, EAST)) {
+	//		if (available_to_destination(add(point, EAST), EAST, stop))
+	//			return true;
+	//		else {
+	//			Pos tmp = add(point, dir);
+	//			if (maze[tmp.x][tmp.y] == WALL||tmp.x>=N) {
+	//				stop = true;
+	//				maze[point.x][point.y] = PATH;
+	//				if (available_to_destination(point, dir, stop))
+	//					return true;
+	//			}
+	//			else
+	//				return false;
+	//		}
+	//	}
+	//	else if (Comp(dir, SOUTH)) {
+	//		if (available_to_destination(add(point, SOUTH), SOUTH, stop))
+	//			return true;
+	//		else {
+	//			Pos tmp = add(point, dir);
+	//			if (maze[tmp.x][tmp.y] == WALL||tmp.y>=N) {
+	//				stop = true;
+	//				maze[point.x][point.y] = PATH;
+	//				if (available_to_destination(point, dir, stop))
+	//					return true;
+	//			}
+	//			else
+	//				return false;
+	//		}
+	//	}
+	//	else if (Comp(dir, WEST)) {
+	//		if(available_to_destination(add(point, WEST), WEST, stop))
+	//			return true;
+	//		else {
+	//			Pos tmp = add(point, dir);
+	//			if (maze[tmp.x][tmp.y] == WALL||tmp.x<0) {
+	//				stop = true;
+	//				maze[point.x][point.y] = PATH;
+	//				if (available_to_destination(point, dir, stop))
+	//					return true;
+	//			}
+	//			else
+	//				return false;
+	//		}
+	//	}
+	//	return false;
+	//}

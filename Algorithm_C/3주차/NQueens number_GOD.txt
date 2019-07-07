@@ -1,0 +1,12 @@
+int queen::sol_queens(int level) {
+   int result = 0;
+   if (!promising(level)) return 0;
+   else if (level == n) return 1;
+   else {
+      for (int i = 1; i <= n; i++) {
+         cols[level+1] = i;
+         result += sol_queens(level + 1);
+      }
+   }
+   return result;
+}

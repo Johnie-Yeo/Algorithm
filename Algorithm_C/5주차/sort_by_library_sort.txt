@@ -1,0 +1,252 @@
+#pragma warning(disable:4996)
+
+#include<stdio.h>
+#include<string.h>
+#include<stdlib.h>
+
+#define BUFFER_SIZE 20
+#define MAX 1000
+#define MEMBER_SIZE 50
+#define LINE_LENGTH 200
+
+typedef struct {
+	char name[MEMBER_SIZE];
+	char company[MEMBER_SIZE];
+	char address[MEMBER_SIZE];
+	char zipcode[MEMBER_SIZE];
+	char phone[MEMBER_SIZE];
+	char email[MEMBER_SIZE];
+}Person;
+
+Person person[MAX];
+int number_p;
+
+void read();
+int read_line(FILE *fp, char str[], int n);
+void add(char str[]);
+void print_info();
+char* delet_space(char str[]);
+int compare_by_name(const void *p, const void *q);
+int compare_by_company(const void *p, const void *q);
+int compare_by_address(const void *p, const void *q);
+int compare_by_zipcode(const void *p, const void *q);
+int compare_by_phone(const void *p, const void *q);
+int compare_by_email(const void *p, const void *q);
+void print_name();
+void print_company();
+void print_address();
+void print_zipcode();
+void print_phone();
+void print_email();
+
+int main()
+{
+	char command[BUFFER_SIZE];
+	char tmp[10];
+	char command2[BUFFER_SIZE];
+	number_p = 0;
+	while (1){
+		printf("$ ");
+		scanf("%s", command);
+		if (strcmp(command, "read") == 0) {
+			read();
+		}
+		else if (strcmp(command, "sort") == 0) {
+			scanf("%s", tmp);
+			if (strcmp(tmp, "by") != 0) {
+				printf("Invalid Argument.\n");
+				continue;
+			}
+			scanf("%s", command2);
+			if (strcmp(command2, "name") == 0) {
+				qsort(person, number_p, sizeof(Person), compare_by_name);
+			}
+			else if (strcmp(command2, "company") == 0) {
+				qsort(person, number_p, sizeof(Person), compare_by_company);
+			}
+			else if (strcmp(command2, "address") == 0) {
+				qsort(person, number_p, sizeof(Person), compare_by_address);
+			}
+			else if (strcmp(command2, "zipcode") == 0) {
+				qsort(person, number_p, sizeof(Person), compare_by_zipcode);
+			}
+			else if (strcmp(command2, "phone") == 0) {
+				qsort(person, number_p, sizeof(Person), compare_by_phone);
+			}
+			else if (strcmp(command2, "email") == 0) {
+				qsort(person, number_p, sizeof(Person), compare_by_email);
+			}
+			else {
+				printf("Invalid Argument.\n");
+				continue;
+			}
+		}
+		else if (strcmp(command, "print") == 0) {
+			scanf("%s", command2);
+			if (strcmp(command2, "name") == 0)
+				print_name();
+			else if (strcmp(command2, "company") == 0)
+				print_company();
+			else if (strcmp(command2, "address") == 0)
+				print_address();
+			else if (strcmp(command2, "zipcode") == 0)
+				print_zipcode();
+			else if (strcmp(command2, "phone") == 0)
+				print_phone();
+			else if (strcmp(command2, "email") == 0)
+				print_email();
+			else
+				print_info();
+		}
+		else if (strcmp(command, "exit") == 0) {
+			break;
+		}
+		else {
+			printf("Invalid Arguments.\n");
+			continue;
+		}
+	}
+	return 0;
+}
+void read()
+{
+	char fileN[BUFFER_SIZE];
+	scanf("%s", fileN);
+	char buffer[LINE_LENGTH];
+
+	FILE *fp = fopen(fileN, "r");
+	if (fp == NULL) {
+		printf("Open failed.\n");
+		return;
+	}
+	while (!feof(fp)) {
+		read_line(fp, buffer, LINE_LENGTH);
+		add(buffer);
+	}
+
+	fclose(fp);
+}
+int read_line(FILE *fp, char str[], int n)
+{
+	int ch, i = 0;
+
+	while ((ch = fgetc(fp)) != '\n'&&ch != EOF)
+		if (i < n)
+			str[i++] = ch;
+	str[i] = '\0';
+	return i;
+}
+void add(char str[])
+{
+	char *delim = "\t|";
+	char *buf1;
+	
+	buf1 = strtok(str, delim);
+	buf1 = delet_space(buf1);
+	strcpy(person[number_p].name, buf1);
+	
+	buf1 = strtok(NULL, delim);
+	buf1 = delet_space(buf1);
+	strcpy(person[number_p].company, buf1);
+	
+	buf1 = strtok(NULL, delim);
+	buf1 = delet_space(buf1);
+	strcpy(person[number_p].address, buf1);
+	
+	buf1 = strtok(NULL, delim);
+	buf1 = delet_space(buf1);
+	strcpy(person[number_p].zipcode, buf1);
+	
+	buf1 = strtok(NULL, delim);
+	buf1 = delet_space(buf1);
+	strcpy(person[number_p].phone, buf1);
+	
+	buf1 = strtok(NULL, delim);
+	buf1 = delet_space(buf1);
+	strcpy(person[number_p].email, buf1);
+
+	number_p++;
+}
+void print_info()
+{
+	for (int i = 0;i < number_p;i++) {
+		printf("%s\t", person[i].name);
+		printf("%s\t", person[i].company);
+		printf("%s\t", person[i].address);
+		printf("%s\t", person[i].zipcode);
+		printf("%s\t", person[i].phone);
+		printf("%s\n", person[i].email);
+	}
+}
+void print_name()
+{
+	for (int i = 0;i < number_p;i++) {
+		printf("%s\n", person[i].name);
+	}
+}
+void print_company()
+{
+	for (int i = 0;i < number_p;i++) {
+		printf("%s\n", person[i].company);
+		
+	}
+}
+void print_address() {
+	for (int i = 0;i < number_p;i++) {
+		printf("%s\n", person[i].address);
+	
+	}
+}
+void print_zipcode() {
+	for (int i = 0;i < number_p;i++) {
+		printf("%s\n", person[i].zipcode);
+
+	}
+}
+void print_phone() {
+	for (int i = 0;i < number_p;i++) {
+		printf("%s\n", person[i].phone);
+	
+	}
+}
+void print_email() {
+	for (int i = 0;i < number_p;i++) {
+		printf("%s\n", person[i].email);
+	}
+}
+char* delet_space(char str[])
+{
+	int j = 0;
+	while (str[j] == ' ')
+		str++;
+	int i = strlen(str);
+	while (str[i-1] == ' ')
+		i--;
+	str[i] = '\0';
+
+	return str;
+}
+int compare_by_name(const void *p, const void *q) 
+{ 
+	return strcmp(((Person *)p)->name, ((Person *)q)->name); 
+}
+int compare_by_company(const void *p, const void *q) 
+{ 
+	return strcmp(((Person *)p)->company, ((Person *)q)->company);
+}
+int compare_by_address(const void *p, const void *q)
+{
+	return strcmp(((Person *)p)->address , ((Person *)q)->address);
+}
+int compare_by_zipcode(const void *p, const void *q)
+{
+	return strcmp(((Person *)p)->zipcode , ((Person *)q)->zipcode);
+}
+int compare_by_phone(const void *p, const void *q)
+{
+	return strcmp(((Person *)p)->phone , ((Person *)q)->phone);
+}
+int compare_by_email(const void *p, const void *q)
+{
+	return strcmp(((Person *)p)->email , ((Person *)q)->email);
+}

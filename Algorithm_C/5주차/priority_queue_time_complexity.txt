@@ -1,0 +1,179 @@
+#pragma warning(disable:4996)
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<time.h>
+#include<stdbool.h>
+
+int M;
+int N;
+int n;//number of queue
+int *data;
+
+void set_data();
+void test();
+void test_by_queue();
+void add();
+void extract();
+void add_by_queue();
+void extract_by_queue();
+void extract_by_queue();
+int get_parent(int i);
+void swap(int *a, int *b);
+void max_heapify(int i);
+bool has_child(int i);
+int bigger_child(int i);
+void build_max_heap();
+
+int main()
+{
+	test();
+	test_by_queue();
+
+	return 0;
+}
+void set_data()
+{
+	printf("N: ");
+	scanf("%d", &N);
+
+	data = (int *)malloc(sizeof(int)*N*10);
+	srand((unsigned)time(NULL));
+	for (int i = 0;i < N;i++) {
+		data[i] = rand() % N;
+		n++;
+	}
+}
+void test()
+{
+	int random;
+	clock_t start, end;
+	float res;
+
+	printf("Normal\n");
+	
+	n = 0;
+	set_data();
+	printf("M: ");
+	scanf("%d", &M);
+	
+	start = clock();
+
+	srand((unsigned)time(NULL));
+	for (int i = 0;i < M;i++) {
+		random = rand()%2;
+		if (random == 0 || n<0)
+			add();
+		else
+			extract();
+	}
+
+	end = clock();
+	res = (float)(end - start) / CLOCKS_PER_SEC;
+	
+	printf("%f sec\n", res);
+}
+void test_by_queue()
+{
+	int random;
+	clock_t start, end;
+	float res;
+
+	printf("Priority Queue\n");
+
+	n = 0;
+	set_data();
+	build_max_heap();
+	printf("M: ");
+	scanf("%d", &M);
+
+	start = clock();
+
+	srand((unsigned)time(NULL));
+	for (int i = 0;i < M;i++) {
+		random = rand() % 2;
+		if (random == 0 || n<0)
+			add_by_queue();
+		else
+			extract_by_queue();
+	}
+
+	end = clock();
+	res = (float)(end - start) / CLOCKS_PER_SEC;
+
+	printf("%f sec\n", res);
+}
+void add()
+{
+	srand((unsigned)time(NULL));
+	data[n++] = rand() % N;
+}
+void extract()
+{
+	int max_index=0;
+	for (int i = 1;i < n;i++)
+		if (data[i] > data[max_index])
+			max_index = i;
+	/*for (int i = max_index;i < n;i++)
+		data[i] = data[i + 1];*/
+	swap(&data[max_index],&data[n-1]);
+	n--;
+}
+void add_by_queue()
+{
+	n++;
+	srand((unsigned)time(NULL));
+	data[n] = rand() % N;
+	int i = n;
+	while (i > 0 && data[get_parent(i)] < data[i]) {
+		swap(&data[i], &data[get_parent(i)]);
+		i = get_parent(i);
+	}
+}
+void extract_by_queue()
+{
+	data[0] = data[n - 1];
+	n--;
+	max_heapify(0);
+}
+int get_parent(int i)
+{
+	if (i == 0)
+		return -1;
+	else
+		return (i - 1) / 2;
+}
+void swap(int *a, int *b)
+{
+	int tmp = *a;
+	*a = *b;
+	*b = tmp;
+}
+void max_heapify(int i)
+{
+	if (!has_child(i))
+		return;
+	int k = bigger_child(i);
+	if (data[i] >= data[k])
+		return;
+	swap(&data[i], &data[k]);
+	max_heapify(k);
+}
+bool has_child(int i)
+{
+	if (2 * i + 1 <= n - 1)
+		return true;
+	return false;
+}
+int bigger_child(int i)
+{
+	if (2 * i + 2 > n - 1 || data[2 * i + 1] > data[2 * i + 2])
+		return 2 * i + 1;
+	else
+		return 2 * i + 2;
+}
+void build_max_heap()
+{
+	for (int i = n / 2 - 1;i >= 0;i--)
+		max_heapify(i);
+}

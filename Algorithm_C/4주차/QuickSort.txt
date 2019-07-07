@@ -1,0 +1,54 @@
+// pivot 기준값
+// 마지막 데이터를 pivot으로 가정
+
+//divide : pivot을 중심으로 큰값 작은값 나누기
+//conquer : sort each part recursively
+//merge:  nothing to do
+
+void quickSort(int *data, int begin, int end)
+{
+	int pivot_idx;
+	if (begin < end) {
+		pivot_idx = partition(data, begin, end);
+		quickSort(data, begin, pivot_idx - 1);
+		quickSort(data, pivot_idx + 1, end);
+	}
+}
+int partition(int *data, int begin, int end)
+{
+	//i=pivot보다 작은 값들 최상위 인덱스
+	//j=현재위치
+	int pivot = data[end];
+	int i = begin - 1;
+	for (int j = begin;j < end;j++) {
+		if (data[j] <= pivot) {
+			i++;
+			swap(&data[i], &data[j]);
+		}
+	}
+	swap(&data[i + 1], &data[end]);
+
+	return (i + 1);
+}
+void swap(int *a, int *b)
+{
+	int tmp = *a;
+	*a = *b;
+	*b = tmp;
+}
+
+
+//최악의 경우 시간복잡도
+//한쪽은 0개 다른쪽은 n-1개로 분할되는 경우
+//T(n)=T(0)+T(n-1)+O(n)//partition의 시간복잡도
+//	=T(n-1)+O(n)
+//	=T(n-2)+T(n-1)+O(n-1)+O(n)
+//	...
+//	=O(1)+O(2)+ ... +O(n-1)+O(n)
+//	=O(n^2)
+
+//	이미 정렬된 데이터(마지막 원소를 pivot으로 선택한 경우)
+
+//최선의 경우
+// T(n)=2T(n/2)+O(n)
+//	=O(n*log(n))

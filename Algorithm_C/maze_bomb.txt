@@ -1,0 +1,148 @@
+°æ·Î¼ö
+
+int MazePath(int result, int x, int y, int dist,bool bomb)
+{
+	static int count = 0;
+	if (x < 0 || y < 0 || x >= N || y >= N ||maze[x][y]==2) {
+		return -1;
+	}
+	else if (dist > K) {
+		maze[x][y] = 0;
+		return -1;
+	}
+	else if (x == N - 1 && y == N - 1) {
+		return count++;
+	}
+	else {
+		if (maze[x][y] == 1) {
+			if (!bomb) {
+				return -1;
+			}
+			else
+				bomb = false;
+		}
+		maze[x][y] = 2;
+		if (MazePath(result, x - 1, y, dist + 1, bomb)>0 || MazePath(result, x, y + 1, dist + 1, bomb)>0 ||
+			MazePath(result, x + 1, y, dist + 1, bomb)>0 || MazePath(result, x, y - 1, dist + 1, bomb)>0)
+			return count;
+
+		return -1;
+	}
+}
+
+
+bool
+bool MazePath(int result, int x, int y, bool bomb)
+{
+	if (x < 0 || y < 0 || x >= N || y >= N || maze[x][y] == 2) {
+		return false;
+	}
+	else if (x == N - 1 && y == N - 1) {
+		return true;
+	}
+	else {
+		if (maze[x][y] == 1) {
+			if (!bomb) {
+				return false;
+			}
+			else {
+				bomb = false;
+				maze[x][y] = -1;
+			}
+		}
+		if(maze[x][y]!=-1)
+			maze[x][y] = 2;
+		if (MazePath(result, x - 1, y, bomb) || MazePath(result, x, y + 1, bomb) ||
+			MazePath(result, x + 1, y, bomb) || MazePath(result, x, y - 1, bomb))
+			return true;
+		if (maze[x][y] == 2)
+			maze[x][y] = 0;
+		else if (maze[x][y] == -1)
+			maze[x][y] = 1;
+		return false;
+	}
+}
+
+
+
+FYI
+
+#pragma warning(disable:4996)
+
+#include <stdio.h>
+#include <stdlib.h>
+#include<stdbool.h>
+
+int N;
+int **maze;
+
+void maze_mallocation(int n);
+void maze_free(int n);
+bool MazePath(int result, int x, int y,bool bomb);
+
+int main()
+{
+	int T;
+	bool bomb = true;
+	FILE *fp = fopen("input1.txt", "r");
+	fscanf(fp, "%d", &T);
+	for (int i = 0;i < T;i++) {
+		fscanf(fp, "%d", &N);
+		maze_mallocation(N);
+		for (int p = 0;p < N;p++) {
+			for (int q = 0;q < N;q++) {
+				fscanf(fp, "%d", &maze[p][q]);
+			}
+		}
+
+		if (MazePath(0, 0, 0, true))
+			printf("Success.\n");
+		else
+			printf("Fail\n");
+
+	}
+	fclose(fp);
+}
+void maze_mallocation(int n)
+{
+	maze = (int **)malloc(sizeof(int *)*n);
+	for (int i = 0;i < n;i++) {
+		maze[i] = (int *)malloc(sizeof(int)*n);
+	}
+}
+void maze_free(int n)
+{
+	for (int i = 0;i < n;i++)
+		free(maze[i]);
+	free(maze);
+}
+bool MazePath(int result, int x, int y, bool bomb)
+{
+	if (x < 0 || y < 0 || x >= N || y >= N || maze[x][y] == 2) {
+		return false;
+	}
+	else if (x == N - 1 && y == N - 1) {
+		return true;
+	}
+	else {
+		if (maze[x][y] == 1) {
+			if (!bomb) {
+				return false;
+			}
+			else {
+				bomb = false;
+				maze[x][y] = -1;
+			}
+		}
+		if(maze[x][y]!=-1)
+			maze[x][y] = 2;
+		if (MazePath(result, x - 1, y, bomb) || MazePath(result, x, y + 1, bomb) ||
+			MazePath(result, x + 1, y, bomb) || MazePath(result, x, y - 1, bomb))
+			return true;
+		if (maze[x][y] == 2)
+			maze[x][y] = 0;
+		else if (maze[x][y] == -1)
+			maze[x][y] = 1;
+		return false;
+	}
+}

@@ -1,0 +1,437 @@
+queue.h
+
+
+#ifndef QUEUEADT_H
+#define QUEUEADT_H
+
+#include <stdbool.h> //C99 only
+#include<stdio.h>
+
+typedef struct info {
+	char *name;
+	double longitude;
+	double latitude;
+	double weight;
+	struct info *next;
+}Info;
+typedef Info* Item;
+
+typedef struct queue_type *Queue;
+
+Queue create();
+void destroy(Queue q);
+void make_empty(Queue q);
+bool is_empty(Queue q);
+void enqueue(Queue q, Item i);
+Item dequeue(Queue q);
+Item peek(Queue q);
+int get_size(Queue q);
+
+#endif
+
+
+queue.cpp
+
+#include<stdio.h>
+#include<stdlib.h>
+#include "queue.h"
+
+#define INIT_CAPACITY 100
+
+void reallocate(Queue q);
+
+struct queue_type {
+	Item  *contents;
+	int front;
+	int rear;
+	int size;// the number of saved data
+	int capacity;//size of array contents
+};
+void terminate(const char *message)
+{
+	printf("%s\n", message);
+	exit(1);
+}
+int get_size(Queue q)
+{
+	return q->size;
+}
+Queue create()
+{
+	Queue q = (Queue)malloc(sizeof(struct queue_type));
+	if (q == NULL)
+		terminate("Error in create: queue could not be created.");
+	q->contents = (Item *)malloc(INIT_CAPACITY * sizeof(Item));
+	if (q->contents == NULL) {
+		free(q);
+		terminate("Error in create:queue could not be created.");
+	}
+	q->front = 0;
+	q->rear = -1;
+	q->size = 0;
+	q->capacity = INIT_CAPACITY;
+
+	return q;
+}
+void destroy(Queue q)
+{
+	free(q->contents);
+	free(q);
+}
+void make_empty(Queue q)
+{
+	q->front = 0;
+	q->rear = -1;
+	q->size = 0;
+}
+bool is_empty(Queue q)
+{
+	return q->size == 0;
+}
+bool is_full(Queue q)
+{
+	return q->size == q->capacity;
+}
+void enqueue(Queue q, Item i)
+{
+	if (is_full(q))
+		reallocate(q);
+	q->rear = (q->rear + 1) % q->capacity;
+	q->contents[q->rear] = i;
+	q->size++;
+}
+Item dequeue(Queue q)
+{
+	if (is_empty(q))
+		terminate("Error in dequeue:queue is empty.");
+	Item result = q->contents[q->front];
+	q->front = (q->front + 1) % q->capacity;
+	q->size--;
+	return result;
+}
+Item peek(Queue q)
+{
+	if (is_empty(q))
+		terminate("Error in peek: queue is empty.");
+	return q->contents[q->front];
+}
+void reallocate(Queue q)
+{
+	Item *tmp = (Item *)malloc(2 * q->capacity * sizeof(Item));
+	if (tmp == NULL)
+		terminate("Error in create: queue could not be expanded.");
+	int j = q->front;
+	for (int i = 0;i < q->size;i++) {
+		tmp[i] = q->contents[j];
+		j = (j + 1) % q->capacity;
+	}
+	free(q->contents);
+
+	q->front = 0;
+	q->rear = q->size - 1;
+	q->contents = tmp;
+	q->capacity *= 2;
+}
+
+
+
+main.cpp
+
+
+#pragma warning(disable:4996)
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#include<stdbool.h>
+#include<math.h>
+#include"queue.h"
+
+#define LINE_LENGTH 200
+#define PI acos(-1.0)
+#define INFO_SIZE 15000
+
+Info *info_alab[INFO_SIZE];
+
+int num_info = 0;//number of info
+
+double  calDistance(double  lat1, double  lon1, double  lat2, double  lon2);
+double  deg2rad(double  deg);
+double  rad2deg(double  rad);
+void read_info();
+int read_line(FILE *fp, char str[], int n);
+void add(char *line);
+void read_roadList();
+int find_area(char *str);
+void add_road(char *line);
+void question_a();
+void qeustion_b();
+void bfs(int idx);
+void dfs(int idx, bool *visit,FILE *fp);
+void print_info(Info p);
+void print_file(Info p,FILE *fp);
+void print_tmp();
+int main()
+{
+	read_info();
+	read_roadList();
+	//print_tmp();
+	//question_a();
+	qeustion_b();
+	
+	return 0;
+}
+void print_tmp()
+{
+	FILE *fp = fopen("tmp.txt", "w");
+	for (int i = 0;i < num_info;i++) {
+		Info *cur = info_alab[i];
+		while ((cur = cur->next) != NULL) {
+			fprintf(fp, "%s\t%s\n", info_alab[i]->name,cur->name);
+		}
+	}
+	fclose(fp);
+}
+void read_info()
+{
+	char buffer[LINE_LENGTH];
+	FILE *fp = fopen("alabama.txt", "r");
+	if (fp == NULL) {
+		printf("No file.\n");
+		return;
+	}
+	while (!feof(fp)) {
+		if (read_line(fp, buffer, LINE_LENGTH)>0)
+			add(buffer);
+	}
+	fclose(fp);
+}
+int read_line(FILE *fp, char str[], int n)
+{
+	int ch, i = 0;
+
+	while ((ch = fgetc(fp)) != '\n'&&ch != EOF)
+		if (i < n)
+			str[i++] = ch;
+	str[i] = '\0';
+	return i;
+}
+void add(char *line)
+{
+	char *buffer;
+	buffer = strtok(line, "\t");
+	info_alab[num_info] = (Info *)malloc(sizeof(Info));
+	info_alab[num_info]->name = strdup(buffer);
+	buffer = strtok(NULL, "\t");
+	info_alab[num_info]->longitude = atof(buffer);
+	buffer = strtok(NULL, "\t");
+	info_alab[num_info]->latitude = atof(buffer);
+	info_alab[num_info]->weight = 0;
+	info_alab[num_info]->next = NULL;
+	
+	num_info++;
+}
+void read_roadList()
+{
+	char buffer[LINE_LENGTH];
+	FILE *fp = fopen("roadList2.txt", "r");
+	if (fp == NULL) {
+		printf("No file.\n");
+		return;
+	}
+	while (!feof(fp)) {
+		if (read_line(fp, buffer, LINE_LENGTH)>0)
+			add_road(buffer);
+	}
+	fclose(fp);
+}
+void add_road(char *line)
+{
+	char *buffer;
+	char *buffer2;
+	buffer = strtok(line, "\t");
+	int idx = find_area(buffer);
+	if (idx < 0) {
+		printf("Error!.\n");
+		return;
+	}
+	buffer2 = strtok(NULL, "\t");
+	int idx2 = find_area(buffer2);
+	if (idx2 < 0) {
+		printf("Error!.\n");
+		return;
+	}
+	Info *tmp = (Info *)malloc(sizeof(Info));
+	tmp->name = strdup(buffer2);
+	tmp->weight = calDistance(info_alab[idx]->latitude, info_alab[idx]->longitude, info_alab[idx2]->latitude, info_alab[idx2]->longitude);
+	tmp->latitude = info_alab[idx2]->latitude;
+	tmp->longitude = info_alab[idx2]->longitude;
+	if (info_alab[idx]->next == NULL) {
+		info_alab[idx]->next = tmp;
+		tmp->next = NULL;
+	}
+	else {
+		tmp->next = info_alab[idx]->next;
+		info_alab[idx]->next = tmp;
+	}
+	Info *tmp2 = (Info *)malloc(sizeof(Info));
+	tmp2->name = strdup(buffer);
+	tmp2->weight = tmp->weight;
+	tmp2->latitude = info_alab[idx]->latitude;
+	tmp2->longitude = info_alab[idx]->longitude;
+	if (info_alab[idx2]->next == NULL) {
+		info_alab[idx2]->next = tmp2;
+		tmp2->next = NULL;
+	}
+	else {
+		tmp2->next = info_alab[idx2]->next;
+		info_alab[idx2]->next = tmp2;
+	}
+}
+int find_area(char *str)
+{
+	for (int i = 0;i < INFO_SIZE;i++)
+		if (info_alab[i]!=NULL&&strcmp(str, info_alab[i]->name) == 0)
+			return i;
+	return -1;
+}
+double  calDistance(double  lat1, double  lon1, double  lat2, double  lon2) {
+	double  theta, dist;         
+	theta = lon1 - lon2;       
+	dist = sin(deg2rad(lat1)) * sin(deg2rad(lat2)) + cos(deg2rad(lat1))      
+		* cos(deg2rad(lat2)) * cos(deg2rad(theta));          
+	
+	dist = acos(dist);    
+	dist = rad2deg(dist);       
+	dist = dist * 60 * 1.1515;      
+	dist = dist  *  1.609344;        //  단위  mile  에서  km  변환.       
+	dist  =  dist  *  1000.0;            //  단위    km  에서  m  로변환        
+	return  dist;      
+}     
+//  주어진도(degree)  값을라디언으로변환    
+double  deg2rad(double  deg)  {      
+	return  (double)(deg  * PI / (double)180);
+}     
+//  주어진라디언(radian)  값을도(degree)  값으로변환    
+double  rad2deg(double  rad)  {         
+	return  (double)(rad  *  (double)180  /  PI);   
+}  
+void question_a()
+{
+	char buffer[100];
+	printf("BFS\n");
+	printf("Enter the area name: ");
+	read_line(stdin, buffer, 100);
+	int idx = find_area(buffer);
+	if (idx < 0) {
+		printf("No area named %s.\n", buffer);
+		return;
+	}
+	bfs(idx);
+}
+//void bfs(int idx)
+//{
+//	Queue queue = create();
+//	int *dist = (int *)malloc(sizeof(int)*num_info);
+//	int *prev = (int *)malloc(sizeof(int)*num_info);
+//	for (int i = 0;i < num_info;i++) {
+//		dist[i] = -1;
+//		prev[i] = -1;
+//	}
+//	dist[idx] = 0;
+//	prev[idx] = -1;
+//	enqueue(queue, info_alab[idx]);
+//	while (!is_empty(queue)) {
+//		Info *cur = dequeue(queue);
+//		idx = find_area(cur->name);
+//		while ((cur = cur->next) != NULL) {
+//			int tmp_idx = find_area(cur->name);
+//			if (dist[tmp_idx] == -1) {
+//				dist[tmp_idx] = dist[idx] + 1;
+//				prev[tmp_idx] = idx;
+//				enqueue(queue, info_alab[tmp_idx]);
+//			}
+//		}
+//	}
+//}
+void bfs(int idx)
+{
+	Queue queue = create();
+	int *dist = (int *)malloc(sizeof(int)*num_info);
+	int *prev = (int *)malloc(sizeof(int)*num_info);
+	for (int i = 0;i < num_info;i++) {
+		dist[i] = -1;
+		prev[i] = -1;
+	}
+	dist[idx] = 0;
+	prev[idx] = -1;
+	enqueue(queue, info_alab[idx]);
+	while (!is_empty(queue)) {
+		Info *cur = dequeue(queue);
+		idx = find_area(cur->name);
+		if (dist[idx] < 10) {
+			printf("%d hops: ",dist[idx]);
+			print_info(*cur);
+		}
+		while ((cur = cur->next) != NULL) {
+			int tmp_idx = find_area(cur->name);
+			if (dist[tmp_idx] == -1) {
+				dist[tmp_idx] = dist[idx] + 1;
+				prev[tmp_idx] = idx;
+				enqueue(queue, info_alab[tmp_idx]);
+			}
+		}
+	}
+	free(dist);
+	free(prev);
+}
+void print_path_BFS(int *prev, int depart_idx, int destin_idx)
+{
+	if (depart_idx == destin_idx)
+		print_info(*info_alab[depart_idx]);
+	else if (prev[destin_idx] = -1)
+		printf("no path.\n");
+	else {
+		print_path_BFS(prev, depart_idx, prev[destin_idx]);
+		print_info(*info_alab[destin_idx]);
+	}
+}
+void print_info(Info p)
+{
+	printf("%s\t%lf\t%lf\n", p.name, p.latitude, p.longitude);
+}
+void qeustion_b()
+{
+	char buffer[100];
+	printf("DFS\n");
+	printf("Enter the area name: ");
+	read_line(stdin, buffer, 100);
+	int idx = find_area(buffer);
+	if (idx < 0) {
+		printf("No area named %s.\n", buffer);
+		return;
+	}
+
+	FILE *fp = fopen("dfs.txt", "w");
+	bool *visit = (bool *)malloc(sizeof(bool)*num_info);
+	for (int i = 0;i < num_info;i++)
+		visit[i] = false;
+	dfs(idx,visit,fp);
+	free(visit);
+	fclose(fp);
+}
+void dfs(int idx, bool *visit,FILE *fp)
+{
+	visit[idx] = true;
+	Info *cur = info_alab[idx];
+	print_file(*cur, fp);
+	while ((cur = cur->next) != NULL) {
+		int tmp_idx = find_area(cur->name);
+		if (!visit[tmp_idx])
+			dfs(tmp_idx, visit,fp);
+	}
+}
+void print_file(Info p,FILE *fp)
+{
+	fprintf(fp, "%s\t%lf\t%lf\n", p.name, p.latitude, p.longitude);
+}

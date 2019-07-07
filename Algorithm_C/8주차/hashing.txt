@@ -1,0 +1,245 @@
+#pragma warning(disable: 4996)
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<stdbool.h>
+#include<string.h>
+#include<time.h>
+
+#define NHASH  4093                      //  NHASH는해쉬테이블의크기
+#define MULTIPLIER  31
+#define FAKE_TEXT 1000  //number of words
+#define BUFFER_SIZE 50
+
+typedef  struct  suffix  Suffix;
+struct  suffix {
+	char  *sword;  //  suffix인단어       
+	int  freq;  //  등장횟수     
+	Suffix  *next;//  다음노드의주소
+};
+
+typedef  struct  prefix  {     
+	char  *pword1;        //  prefix를구성하는첫단어     
+	char  *pword2;  //  prefix를구성하는두번째단어  
+	Suffix  *suf;//  suffix들의연결리스트의첫번째노드의주소      
+	int  sumFreq;//  suffix들의등장횟수(freq)의합
+}Prefix;
+
+typedef  struct  node  Node;
+struct  node { 
+	Prefix  *data;       
+	Node  *next;
+};
+Node  *htable[NHASH];      //  해쉬테이블
+
+unsigned  int  hash(char  *key1, char  *key2);
+void read_file();
+bool check_word(char *word);
+Prefix *add_hash(char *buffer1,char *buffer2,unsigned int hash_idx);
+void add_suffix(char *buffer1, Prefix *pre);
+void print_table();
+void print_randomtext();
+char *pick_suffix(Prefix pre);
+Prefix find_prefix(char *str1, char *str2);
+
+int main()
+{
+	read_file();
+	//print_table();
+	print_randomtext();
+}    
+unsigned  int  hash(char  *key1,  char  *key2)  
+{      
+	unsigned  int  h  =  0;   
+	unsigned  char  *p;   
+	for  (p  =  (unsigned  char  *)key1;  *p  !=  '\0';  p++) 
+		h  =  MULTIPLIER  *  h  +  *p;      
+	for  (p  =  (unsigned  char  *)key2;  *p  !=  '\0';  p++)        
+		h  =  MULTIPLIER  *  h  +  *p;      
+	return  h  %  NHASH;   
+}
+void read_file()
+{
+	char buffer1[BUFFER_SIZE];
+	char buffer2[BUFFER_SIZE];
+	char tmp[BUFFER_SIZE];
+	unsigned int hash_idx;
+	Prefix *pre;
+	FILE *fp = fopen("sample.txt", "r");
+	
+	if (fp == NULL) {
+		printf("No file exist.\n");
+		return;
+	}
+
+	fscanf(fp, "%s", buffer1);
+	if (check_word(buffer1)) {
+		fscanf(fp, "%s", tmp);
+		strcat(buffer1, tmp);
+	}
+	fscanf(fp, "%s", buffer2);
+	if (check_word(buffer2)) {
+		fscanf(fp, "%s", tmp);
+		strcat(buffer2, tmp);
+	}
+	
+	hash_idx = hash(buffer1, buffer2);
+	pre=add_hash(buffer1,buffer2,hash_idx);
+	
+	while(!feof(fp)) {
+		strcpy(buffer1, buffer2);
+
+		fscanf(fp, "%s", buffer2);
+		if (check_word(buffer2)) {
+			fscanf(fp, "%s", tmp);
+			strcat(buffer2, tmp);
+		}
+		add_suffix(buffer2, pre);
+		hash_idx = hash(buffer1, buffer2);
+		pre=add_hash(buffer1, buffer2,hash_idx);
+	}
+	add_suffix("[END]", pre);
+}
+bool check_word(char *word)
+{
+	int i = 0;
+	while (word[i] != '\0') {
+		if (word[i++] == '\0'&&word[i-1] == '-') {
+			char *tmp = strtok(word, "-");
+			word = strdup(tmp);
+			return true;
+		}
+	}
+	return false;
+}
+Prefix *add_hash(char *buffer1, char *buffer2, unsigned int hash_idx)
+{
+	Prefix *word = (Prefix *)malloc(sizeof(Prefix));
+	word->pword1 = strdup(buffer1);
+	word->pword2 = strdup(buffer2);
+	word->suf = NULL;
+	word->sumFreq = 0;
+	if (htable[hash_idx] == NULL) {
+		htable[hash_idx] = (Node *)malloc(sizeof(Node));
+		htable[hash_idx]->data = word;
+		htable[hash_idx]->next = NULL;
+		return htable[hash_idx]->data;
+	}
+	else {
+		Node *check = htable[hash_idx];
+		while (check != NULL) {
+			if ((strcmp(check->data->pword1, buffer1) == 0) && (strcmp(check->data->pword2, buffer2) == 0))
+				return check->data;
+			check = check->next;
+		}
+		Node *tmp=(Node *)malloc(sizeof(Node));
+		tmp->data = word;
+		tmp->next = htable[hash_idx];
+		htable[hash_idx] = tmp;
+		return tmp->data;
+	}
+}
+void add_suffix(char *buffer1, Prefix *pre)
+{
+	Suffix *temp = (Suffix *)malloc(sizeof(Suffix));
+	temp->freq = 0;
+	temp->next = 0;
+	temp->sword = NULL;
+	if (strcmp(buffer1, "[END]") != 0)
+		pre->sumFreq++;
+	if (pre->suf == NULL) {
+		pre->suf = temp;
+		pre->suf->freq++;
+		pre->suf->sword = strdup(buffer1);
+	}
+	else {
+		Suffix *tmp = pre->suf;
+		while (tmp != NULL) {
+			if (strcmp(tmp->sword, buffer1) == 0)
+				break;
+			tmp = tmp->next;
+		}
+		if (tmp == NULL) {
+			temp->freq++;
+			temp->sword = strdup(buffer1);
+			temp->next = pre->suf;
+			pre->suf = temp;
+		}
+		else {
+			tmp->freq++;
+		}
+	}
+}
+void print_table()
+{
+	FILE *fp = fopen("harry.txt", "w");
+	printf("Prefix			Suffix\n");
+	for (int i = 0;i < NHASH;i++) {
+		Node *tmp = htable[i];
+		while (tmp!= NULL) {
+			printf("%s %s(%d)\t\t\t", tmp->data->pword1, tmp->data->pword2,tmp->data->sumFreq);
+			fprintf(fp, "%s %s (%d)\t\t\t", tmp->data->pword1, tmp->data->pword2, tmp->data->sumFreq);
+			while (tmp->data->suf != NULL) {
+				printf(", %s", tmp->data->suf->sword);
+				fprintf(fp, ", %s", tmp->data->suf->sword);
+				if (strcmp(tmp->data->suf->sword, "[END]") != 0) {
+					printf("(%d)", tmp->data->suf->freq);
+					fprintf(fp, "(%d)", tmp->data->suf->freq);
+				}
+				tmp->data->suf = tmp->data->suf->next;
+			}
+			printf("\n");
+			fprintf(fp, "\n");
+			tmp = tmp->next;
+		}
+	}
+}
+void print_randomtext()
+{
+	int n_word = 0;
+	char buffer1[BUFFER_SIZE];
+	char buffer2[BUFFER_SIZE];
+	char *rand_suffix;
+	Prefix pre = *htable[0]->data;
+	strcpy(buffer1, pre.pword1);
+	strcpy(buffer2, pre.pword2);
+	printf("%s %s ", buffer1, buffer2);
+	n_word++;
+	n_word++;
+	while (n_word <= 1000 && strcmp(buffer2, "[END]") != 0) {
+		if (n_word % 10 == 0)
+			printf("\n");
+		rand_suffix = pick_suffix(pre);
+		printf("%s ", rand_suffix);
+		n_word++;
+		pre = find_prefix(pre.pword2, rand_suffix);
+	}
+}
+char *pick_suffix(Prefix pre)
+{
+	srand((unsigned)time(NULL));
+	int rand_idx = rand() % pre.sumFreq;
+	if (rand_idx != 0) {
+		for (int i = 0;i < rand_idx;i++) {
+			int tmp = pre.suf->freq;
+			if(tmp==1)
+				pre.suf = pre.suf->next;
+			else {
+				tmp--;
+			}
+		}
+	}
+	return pre.suf->sword;
+}
+Prefix find_prefix(char *str1, char *str2)
+{
+
+	for (int i = 0;i < NHASH;i++) {
+		Node *tmp = htable[i];
+		while (tmp != NULL) {
+			if (strcmp(tmp->data->pword1, str1) == 0 && strcmp(tmp->data->pword2, str2) == 0)
+				return *tmp->data;
+			tmp = tmp->next;
+		}
+	}
+}

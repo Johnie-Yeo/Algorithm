@@ -1,0 +1,149 @@
+O(N) 인 이유
+
+#include<stdio.h>
+
+#define N 10000
+
+int main()
+{
+	int data[N];
+
+	int i, j;
+
+	int min = data[j];
+	for (int k = i ;k < j;k++)
+		if (data[k] < min)
+			min = data[k];
+}
+for 문이 최악의 경우 N번 실행된다.
+
+
+#pragma warning(disable:4996)
+
+#include<stdio.h>
+
+#define N 10000
+#define MAX 100
+int data[N];
+int group_min[MAX];
+
+void range_query();
+int sqrt(int num);
+void pre_processing(int num, int M);
+void range_query_with_pre_processing(int M);
+void query(int *array, int size);
+int main()
+{
+	FILE *fp = fopen("data.txt","r");
+
+	int num;
+	int idx = 0;
+
+	fscanf(fp, "%d", &num);
+	
+	while (!feof(fp)) {
+		fscanf(fp, "%d", &data[idx++]);
+	}
+
+	int num_member = sqrt(num);
+	pre_processing(num, num_member);
+	range_query_with_pre_processing(num_member);
+
+	return 0;
+}
+
+void range_query()
+{
+	int i, j;
+
+	while (1) {
+		scanf("%d %d", &i, &j);
+		if (i == -1)
+			break;
+
+		int min = data[j];
+		for (int k = i;k < j;k++)
+			if (data[k] < min)
+				min = data[k];
+
+		printf("%d", min);
+	}
+}
+int sqrt(int num) //바빌로니아법
+{
+	int x = 1;
+
+	while (1) {
+		x = (x + num / x) / 2;
+
+		if (num == x*x)
+			break;
+	}
+
+	return x;
+}
+//double sqrt(double num) 
+//{	
+//	double x = 1.0;
+//
+//	while (1) {
+//		x = (x + num / x) / 2;
+//
+//		if (num - 0.00005 < x*x&&x*x < num + 0.00005)
+//			break;
+//	}
+//	return x;
+//}
+void pre_processing(int num, int M)
+{
+	int i = 0,k=0;
+	int min_idx = 0;
+
+	int num_group=(num-1)/M+1;
+
+	for (i = 0;i < num_group;i++) {
+		group_min[min_idx] = data[k++];
+		for (int j = 1;j < M;j++) {
+			if (data[k] < group_min[min_idx])
+				group_min[min_idx] = data[k];
+			k++;
+		}
+		min_idx++;
+	}
+}
+void range_query_with_pre_processing(int M)
+{
+	while (1) {
+
+		int i, j;
+		int tmp_data[MAX * 10];
+		int tmp_idx = 0;
+
+		printf("$ ");
+		scanf("%d %d", &i, &j);
+		if (i == -1)
+			return;
+		while (i%M!=0) {
+			tmp_data[tmp_idx++] = data[i++];
+		}
+		int k = i / M;
+		int r = j / M;
+		while (k!=r) {
+			tmp_data[tmp_idx++] = group_min[k++];
+			i += M;
+		}
+		while (i != j) {
+			tmp_data[tmp_idx++] = data[i++];
+		}
+		query(tmp_data, tmp_idx);
+	}
+}
+void query(int *array,int size)//size는 각 구간의 최소값 집합과 시작점 과 끝점의 몇몇 원소개수들의 합
+{
+	int min = array[0];
+	for (int i = 1;i < size;i++)
+		if (min > array[i])
+			min = array[i];
+
+	printf("MIn: %d\n", min);
+}
